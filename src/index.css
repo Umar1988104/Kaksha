@@ -1,0 +1,314 @@
+:root {
+  --ink: #1C1F2A;
+  --indigo: #1E2A4A;
+  --indigo-light: #2E3E66;
+  --paper: #F3F5F8;
+  --paper-line: #E1E5EC;
+  --white: #FFFFFF;
+  --amber: #E8A33D;
+  --amber-deep: #C97F1E;
+  --green: #3D8361;
+  --green-bg: #E7F2EC;
+  --red: #C1443A;
+  --red-bg: #FBEAE8;
+
+  --font-display: 'Fraunces', serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+
+  --radius: 10px;
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root { height: 100%; }
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  background: var(--paper);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+input, select, button { font-family: inherit; font-size: 15px; }
+
+button { cursor: pointer; }
+
+a { color: inherit; text-decoration: none; }
+
+/* Layout */
+.app-shell { min-height: 100%; display: flex; flex-direction: column; }
+.app-main { flex: 1; max-width: 880px; width: 100%; margin: 0 auto; padding: 24px 20px 64px; }
+
+.navbar {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  background: var(--indigo);
+  color: var(--white);
+  padding: 14px 24px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  flex-wrap: wrap;
+}
+.navbar__brand {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 20px;
+  letter-spacing: 0.02em;
+  margin-right: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.navbar__logo { width: 26px; height: 26px; border-radius: 6px; }
+.navbar__links { display: flex; gap: 4px; flex: 1; flex-wrap: wrap; }
+.navbar__link {
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  color: rgba(255,255,255,0.72);
+  transition: background 0.15s, color 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.navbar__link:hover { background: rgba(255,255,255,0.08); color: var(--white); }
+.navbar__link--active { background: rgba(255,255,255,0.14); color: var(--white); font-weight: 600; }
+.navbar__right { display: flex; align-items: center; gap: 8px; }
+.navbar__icon-link {
+  width: 34px; height: 34px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  color: rgba(255,255,255,0.8); background: rgba(255,255,255,0.06);
+  transition: background 0.15s;
+}
+.navbar__icon-link:hover { background: rgba(255,255,255,0.16); color: var(--white); }
+
+/* Logout button needs its own contrast rules — it sits on the dark navbar,
+   not on the white page background like other .btn--ghost buttons do. */
+.navbar .btn--ghost {
+  color: var(--white);
+  border: 1px solid rgba(255,255,255,0.35);
+  background: rgba(255,255,255,0.06);
+}
+.navbar .btn--ghost:hover {
+  background: rgba(255,255,255,0.16);
+  border-color: rgba(255,255,255,0.5);
+}
+
+/* Page header */
+.page__header { margin-bottom: 20px; }
+.page__header--row { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
+.page__header h1 { font-family: var(--font-display); font-size: 28px; margin: 0 0 4px; }
+.page__sub { margin: 0; color: #5B6474; font-size: 14px; }
+
+/* Buttons */
+.btn {
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-weight: 600;
+  font-size: 14px;
+  transition: transform 0.06s ease, opacity 0.15s;
+}
+.btn:active { transform: scale(0.97); }
+.btn--primary { background: var(--indigo); color: var(--white); }
+.btn--primary:hover { background: var(--indigo-light); }
+.btn--ghost { background: transparent; color: var(--indigo); border: 1px solid var(--paper-line); }
+.btn--ghost:hover { background: var(--white); }
+.btn--danger { color: var(--red); }
+.btn--sm { padding: 6px 10px; font-size: 13px; }
+.btn--whatsapp { background: #25D366; color: #06331B; }
+.btn--whatsapp:hover { opacity: 0.9; }
+.btn:disabled { opacity: 0.6; cursor: default; }
+
+/* Login */
+.login-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--indigo);
+  padding: 24px;
+}
+.login-card {
+  background: var(--white);
+  border-radius: 16px;
+  padding: 40px 36px;
+  max-width: 400px;
+  width: 100%;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+}
+.login-card__logo { width: 48px; height: 48px; border-radius: 12px; margin-bottom: 14px; }
+.login-card__eyebrow {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--amber-deep);
+  margin-bottom: 8px;
+}
+.login-card__title { font-family: var(--font-display); font-size: 28px; margin: 0 0 8px; }
+.login-card__sub { color: #5B6474; margin: 0 0 24px; font-size: 14px; }
+.login-form { display: flex; flex-direction: column; gap: 16px; }
+.login-form label { font-size: 13px; font-weight: 600; color: #444C5C; display: flex; flex-direction: column; gap: 6px; }
+.login-form input {
+  border: 1px solid var(--paper-line);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-weight: 400;
+}
+.form-error { color: var(--red); font-size: 13px; }
+
+.screen-loading { padding: 60px 0; text-align: center; color: #5B6474; }
+.empty-state { padding: 40px 20px; text-align: center; color: #5B6474; background: var(--white); border-radius: var(--radius); border: 1px dashed var(--paper-line); }
+
+/* Stat grid (dashboard) */
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; }
+.stat-card { background: var(--white); border-radius: var(--radius); padding: 18px; border: 1px solid var(--paper-line); box-shadow: 0 1px 2px rgba(28,31,42,0.04); }
+.stat-card__label { font-size: 13px; color: #5B6474; margin-bottom: 8px; }
+.stat-card__value { font-family: var(--font-mono); font-size: 26px; font-weight: 600; color: var(--indigo); }
+.stat-card__hint { font-size: 12px; color: #8891A0; margin-top: 4px; }
+.stat-card--accent .stat-card__value { color: var(--green); }
+.stat-card--danger .stat-card__value { color: var(--red); }
+
+/* Cards / lists */
+.card-list { display: flex; flex-direction: column; gap: 10px; }
+.student-row, .attendance-row, .fee-row {
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--white); border: 1px solid var(--paper-line); border-radius: var(--radius);
+  padding: 14px 16px; gap: 12px; flex-wrap: wrap;
+  box-shadow: 0 1px 2px rgba(28,31,42,0.03);
+  transition: box-shadow 0.15s, border-color 0.15s;
+}
+.student-row:hover, .attendance-row:hover, .fee-row:hover {
+  box-shadow: 0 2px 8px rgba(28,31,42,0.07);
+  border-color: #D4D9E2;
+}
+.student-row__main { flex: 1; min-width: 140px; }
+.student-row__name { font-weight: 600; }
+.student-row__meta { font-size: 13px; color: #5B6474; margin-top: 2px; }
+.student-row__actions { display: flex; gap: 6px; }
+.fee-row__actions { display: flex; gap: 8px; align-items: center; }
+
+.search-input {
+  width: 100%; padding: 10px 14px; border: 1px solid var(--paper-line); border-radius: 8px;
+  margin-bottom: 16px; background: var(--white);
+}
+
+.filter-row { display: flex; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+.filter-row label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 600; color: #444C5C; }
+.filter-row select, .filter-row input {
+  padding: 8px 10px; border: 1px solid var(--paper-line); border-radius: 8px; background: var(--white);
+}
+
+/* Attendance chips */
+.attendance-row__toggle { display: flex; gap: 8px; }
+.chip {
+  border: 1px solid var(--paper-line); background: var(--white); border-radius: 20px;
+  padding: 8px 14px; font-size: 13px; font-weight: 600; color: #5B6474;
+}
+.chip--present.chip--active { background: var(--green-bg); border-color: var(--green); color: var(--green); }
+.chip--absent.chip--active { background: var(--red-bg); border-color: var(--red); color: var(--red); }
+
+/* Stamp — the signature element */
+.stamp {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  padding: 4px 10px;
+  border: 2px solid currentColor;
+  border-radius: 4px;
+  transform: rotate(-4deg);
+}
+.stamp--paid { color: var(--green); }
+.stamp--due { color: var(--red); }
+
+/* Modal */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(28,31,42,0.5);
+  display: flex; align-items: center; justify-content: center; padding: 20px; z-index: 100;
+}
+.modal { background: var(--white); border-radius: 14px; padding: 28px; width: 100%; max-width: 420px; }
+.modal h2 { font-family: var(--font-display); margin-top: 0; }
+.modal-form { display: flex; flex-direction: column; gap: 14px; }
+.modal-form label { font-size: 13px; font-weight: 600; color: #444C5C; display: flex; flex-direction: column; gap: 6px; }
+.modal-form input {
+  border: 1px solid var(--paper-line); border-radius: 8px; padding: 9px 12px; font-weight: 400;
+}
+.modal-form__actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
+
+/* Inline form (test scores) */
+.inline-form { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; background: var(--white); padding: 16px; border-radius: var(--radius); border: 1px solid var(--paper-line); }
+.inline-form input, .inline-form select {
+  padding: 9px 10px; border: 1px solid var(--paper-line); border-radius: 8px; flex: 1; min-width: 120px;
+}
+
+/* Tables */
+.simple-table { width: 100%; border-collapse: collapse; background: var(--white); border-radius: var(--radius); overflow: hidden; }
+.simple-table th, .simple-table td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--paper-line); font-size: 14px; }
+.simple-table th { font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: #8891A0; }
+.simple-table td { font-family: var(--font-mono); }
+.simple-table td:nth-child(2) { font-family: var(--font-body); }
+
+/* Student detail */
+.back-link { display: inline-block; margin-bottom: 12px; color: var(--indigo); font-weight: 600; font-size: 14px; }
+.detail-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+.detail-card { background: var(--white); border: 1px solid var(--paper-line); border-radius: var(--radius); padding: 18px; }
+.detail-card--wide { grid-column: 1 / -1; }
+.detail-card h3 { margin: 0 0 10px; font-size: 15px; }
+.detail-card__big { font-family: var(--font-mono); font-size: 32px; font-weight: 600; color: var(--indigo); }
+.detail-card__hint { font-size: 13px; color: #8891A0; margin: 4px 0 0; }
+.fee-history__row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--paper-line); flex-wrap: wrap; }
+.fee-history__row span { flex: 1; font-size: 14px; }
+
+/* Batch folders (Students page) */
+.batch-list { display: flex; flex-direction: column; gap: 12px; }
+.batch-folder {
+  background: var(--white); border: 1px solid var(--paper-line); border-radius: var(--radius);
+  overflow: hidden;
+}
+.batch-folder__header {
+  width: 100%; display: flex; align-items: center; gap: 8px;
+  padding: 14px 16px; background: transparent; border: none; text-align: left;
+  font-weight: 600; color: var(--indigo); font-size: 15px;
+}
+.batch-folder__header:hover { background: var(--paper); }
+.batch-folder__icon { color: var(--amber-deep); }
+.batch-folder__name { flex: 1; }
+.batch-folder__count {
+  font-family: var(--font-mono); font-size: 12px; color: #8891A0;
+  background: var(--paper); border-radius: 12px; padding: 2px 9px;
+}
+.batch-folder__body { padding: 0 12px 12px; }
+.batch-folder__body .student-row { border-radius: 8px; }
+
+/* Profile page */
+.profile-card {
+  display: flex; align-items: center; gap: 14px;
+  background: var(--white); border: 1px solid var(--paper-line); border-radius: var(--radius);
+  padding: 18px;
+}
+.profile-avatar {
+  width: 52px; height: 52px; border-radius: 50%;
+  background: var(--indigo); color: var(--white);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.profile-card__name { font-weight: 600; font-size: 16px; }
+.profile-card__email {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 13px; color: #5B6474; margin-top: 2px;
+}
+.form-success { color: var(--green); font-size: 13px; margin-top: 8px; }
+
+/* Mobile */
+@media (max-width: 640px) {
+  .app-main { padding: 16px 14px 48px; }
+  .navbar { padding: 12px 16px; }
+  .student-row, .attendance-row, .fee-row { flex-direction: column; align-items: stretch; }
+  .student-row__actions, .fee-row__actions { justify-content: flex-end; }
+}

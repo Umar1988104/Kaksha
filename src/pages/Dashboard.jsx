@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
 import { collection, getDocs, query, where } from 'firebase/firestore'
 import { db } from '../firebase'
+import { useRole } from '../context/RoleContext'
 import { currentMonthKey, monthLabel, todayISO } from '../utils/dates'
 
 export default function Dashboard() {
+  const { orgId, isOrgTeacher } = useRole()
   const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState({
     totalStudents: 0,
@@ -14,17 +16,18 @@ export default function Dashboard() {
   })
 
   useEffect(() => {
+    if (!orgId) return
     async function load() {
       const monthKey = currentMonthKey()
       const today = todayISO()
 
-      const studentsSnap = await getDocs(collection(db, 'students'))
+      const studentsSnap = await getDocs(query(collection(db, 'students'), where('orgId', '==', orgId)))
       const students = studentsSnap.docs
         .map((d) => ({ id: d.id, ...d.data() }))
         .filter((s) => s.active !== false)
 
       const paymentsSnap = await getDocs(
-        query(collection(db, 'feePayments'), where('month', '==', monthKey))
+        query(collection(db, 'feePayments'), where('orgId', '==', orgId), where('month', '==', monthKey))
       )
       const paymentsByStudent = {}
       paymentsSnap.docs.forEach((d) => {
@@ -46,7 +49,7 @@ export default function Dashboard() {
       })
 
       const attendanceSnap = await getDocs(
-        query(collection(db, 'attendance'), where('date', '==', today), where('status', '==', 'present'))
+        query(collection(db, 'attendance'), where('orgId', '==', orgId), where('date', '==', today), where('status', '==', 'present'))
       )
 
       setStats({
@@ -59,7 +62,7 @@ export default function Dashboard() {
       setLoading(false)
     }
     load()
-  }, [])
+  }, [orgId])
 
   if (loading) return <div className="screen-loading">Loading dashboard…</div>
 
@@ -67,7 +70,7 @@ export default function Dashboard() {
     <div className="page">
       <div className="page__header">
         <h1>Dashboard</h1>
-        <p className="page__sub">{monthLabel(currentMonthKey())}</p>
+        <p className="page__sub">{monthLabel(currentMonthKey())}{isOrgTeacher ? ' · view only' : ''}</p>
       </div>
 
       <div className="stat-grid">

@@ -1,39 +1,46 @@
 import { useEffect, useState } from 'react'
-import { collection, doc, getDoc, getDocs, orderBy, query, setDoc } from 'firebase/firestore'
+import { collection, doc, getDoc, getDocs, orderBy, query, setDoc, where } from 'firebase/firestore'
 import { db } from '../firebase'
+import { useRole } from '../context/RoleContext'
 import StatusStamp from '../components/StatusStamp'
 import { buildFeeReminderLink } from '../utils/whatsapp'
 import { currentMonthKey, lastNMonthKeys, monthLabel } from '../utils/dates'
 
 export default function Fees() {
+  const { orgId, canEdit, profile } = useRole()
   const [students, setStudents] = useState([])
   const [payments, setPayments] = useState({})
   const [month, setMonth] = useState(currentMonthKey())
   const [loading, setLoading] = useState(true)
-  const [filter, setFilter] = useState('all') // all | due | paid
+  const [filter, setFilter] = useState('all')
   const [centerName, setCenterName] = useState('')
 
   async function load() {
     setLoading(true)
-    const sSnap = await getDocs(query(collection(db, 'students'), orderBy('name')))
+    const sSnap = await getDocs(query(collection(db, 'students'), where('orgId', '==', orgId), orderBy('name')))
     const studentList = sSnap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((s) => s.active !== false)
     setStudents(studentList)
 
-    const pSnap = await getDocs(collection(db, 'feePayments'))
+    const pSnap = await getDocs(query(collection(db, 'feePayments'), where('orgId', '==', orgId)))
     const byKey = {}
     pSnap.docs.forEach((d) => { const p = d.data(); byKey[`${p.studentId}_${p.month}`] = p })
     setPayments(byKey)
 
-    const settingsSnap = await getDoc(doc(db, 'settings', 'center'))
-    if (settingsSnap.exists()) setCenterName(settingsSnap.data().name || '')
+    if (profile?.mode === 'org' && profile?.orgId) {
+      const orgSnap = await getDoc(doc(db, 'organizations', profile.orgId))
+      if (orgSnap.exists()) setCenterName(orgSnap.data().name || '')
+    } else {
+      setCenterName(profile?.centerName || '')
+    }
 
     setLoading(false)
   }
 
-  useEffect(() => { load() }, [])
+  useEffect(() => { if (orgId) load() }, [orgId])
 
   async function markPaid(student) {
     await setDoc(doc(db, 'feePayments', `${student.id}_${month}`), {
+      orgId,
       studentId: student.id,
       month,
       status: 'paid',
@@ -45,6 +52,7 @@ export default function Fees() {
 
   async function markDue(student) {
     await setDoc(doc(db, 'feePayments', `${student.id}_${month}`), {
+      orgId,
       studentId: student.id,
       month,
       status: 'due',
@@ -68,7 +76,7 @@ export default function Fees() {
     <div className="page">
       <div className="page__header">
         <h1>Fees</h1>
-        <p className="page__sub">{monthLabel(month)}</p>
+        <p className="page__sub">{monthLabel(month)}{!canEdit ? ' · view only' : ''}</p>
       </div>
 
       <div className="filter-row">
@@ -100,7 +108,7 @@ export default function Fees() {
               <StatusStamp status={isPaid ? 'paid' : 'due'} />
               <div className="fee-row__actions">
                 {isPaid ? (
-                  <button className="btn btn--ghost btn--sm" onClick={() => markDue(student)}>Undo</button>
+                  canEdit && <button className="btn btn--ghost btn--sm" onClick={() => markDue(student)}>Undo</button>
                 ) : (
                   <>
                     <a
@@ -116,7 +124,7 @@ export default function Fees() {
                     >
                       Remind on WhatsApp
                     </a>
-                    <button className="btn btn--primary btn--sm" onClick={() => markPaid(student)}>Mark paid</button>
+                    {canEdit && <button className="btn btn--primary btn--sm" onClick={() => markPaid(student)}>Mark paid</button>}
                   </>
                 )}
               </div>

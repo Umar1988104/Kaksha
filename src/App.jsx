@@ -1,14 +1,21 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import { AuthProvider } from './context/AuthContext'
+import { useState } from 'react'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { AuthProvider, useAuth } from './context/AuthContext'
+import { RoleProvider, useRole } from './context/RoleContext'
 import ProtectedRoute from './components/ProtectedRoute'
 import Navbar from './components/Navbar'
+import Splash from './components/Splash'
 import Login from './pages/Login'
+import Signup from './pages/Signup'
+import Onboarding from './pages/Onboarding'
 import Dashboard from './pages/Dashboard'
 import Students from './pages/Students'
 import StudentDetail from './pages/StudentDetail'
 import Attendance from './pages/Attendance'
 import Fees from './pages/Fees'
 import TestScores from './pages/TestScores'
+import Teachers from './pages/Teachers'
+import Suggestions from './pages/Suggestions'
 import Profile from './pages/Profile'
 
 function AppShell({ children }) {
@@ -20,21 +27,66 @@ function AppShell({ children }) {
   )
 }
 
+// Onboarding needs a signed-in user but should redirect away once they
+// already have a profile (role/org already set up).
+function OnboardingRoute({ children }) {
+  const { user } = useAuth()
+  const { profile, loading } = useRole()
+  if (user === undefined || loading) return <div className="screen-loading">Loading…</div>
+  if (user === null) return <Navigate to="/login" replace />
+  if (profile) return <Navigate to="/" replace />
+  return children
+}
+
+function HeadOnlyRoute({ children }) {
+  const { isHead, loading } = useRole()
+  if (loading) return <div className="screen-loading">Loading…</div>
+  if (!isHead) return <Navigate to="/" replace />
+  return children
+}
+
+// Suggestions is used by BOTH the head (to view/resolve) and org teachers
+// (to submit notes) — solo teachers have no org, so they're excluded.
+function OrgRoute({ children }) {
+  const { isHead, isOrgTeacher, loading } = useRole()
+  if (loading) return <div className="screen-loading">Loading…</div>
+  if (!isHead && !isOrgTeacher) return <Navigate to="/" replace />
+  return children
+}
+
+function AppRoutes() {
+  return (
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route path="/signup" element={<Signup />} />
+      <Route path="/onboarding" element={<OnboardingRoute><Onboarding /></OnboardingRoute>} />
+      <Route path="/" element={<ProtectedRoute><AppShell><Dashboard /></AppShell></ProtectedRoute>} />
+      <Route path="/students" element={<ProtectedRoute><AppShell><Students /></AppShell></ProtectedRoute>} />
+      <Route path="/students/:id" element={<ProtectedRoute><AppShell><StudentDetail /></AppShell></ProtectedRoute>} />
+      <Route path="/attendance" element={<ProtectedRoute><AppShell><Attendance /></AppShell></ProtectedRoute>} />
+      <Route path="/fees" element={<ProtectedRoute><AppShell><Fees /></AppShell></ProtectedRoute>} />
+      <Route path="/scores" element={<ProtectedRoute><AppShell><TestScores /></AppShell></ProtectedRoute>} />
+      <Route path="/teachers" element={<ProtectedRoute><HeadOnlyRoute><AppShell><Teachers /></AppShell></HeadOnlyRoute></ProtectedRoute>} />
+      <Route path="/suggestions" element={<ProtectedRoute><OrgRoute><AppShell><Suggestions /></AppShell></OrgRoute></ProtectedRoute>} />
+      <Route path="/profile" element={<ProtectedRoute><AppShell><Profile /></AppShell></ProtectedRoute>} />
+    </Routes>
+  )
+}
+
 export default function App() {
+  const [showSplash, setShowSplash] = useState(true)
+
+  if (showSplash) {
+    return <Splash onDone={() => setShowSplash(false)} />
+  }
+
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/" element={<ProtectedRoute><AppShell><Dashboard /></AppShell></ProtectedRoute>} />
-          <Route path="/students" element={<ProtectedRoute><AppShell><Students /></AppShell></ProtectedRoute>} />
-          <Route path="/students/:id" element={<ProtectedRoute><AppShell><StudentDetail /></AppShell></ProtectedRoute>} />
-          <Route path="/attendance" element={<ProtectedRoute><AppShell><Attendance /></AppShell></ProtectedRoute>} />
-          <Route path="/fees" element={<ProtectedRoute><AppShell><Fees /></AppShell></ProtectedRoute>} />
-          <Route path="/scores" element={<ProtectedRoute><AppShell><TestScores /></AppShell></ProtectedRoute>} />
-          <Route path="/profile" element={<ProtectedRoute><AppShell><Profile /></AppShell></ProtectedRoute>} />
-        </Routes>
-      </BrowserRouter>
+      <RoleProvider>
+        <BrowserRouter>
+          <AppRoutes />
+        </BrowserRouter>
+      </RoleProvider>
     </AuthProvider>
   )
 }

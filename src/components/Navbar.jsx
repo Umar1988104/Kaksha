@@ -1,9 +1,11 @@
 import { NavLink } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { CalendarCheck, IndianRupee, LayoutDashboard, LogOut, Notebook, User, Users } from 'lucide-react'
+import { useRole } from '../context/RoleContext'
+import { CalendarCheck, IndianRupee, LayoutDashboard, LogOut, MessageSquareText, Notebook, User, UserCog, Users } from 'lucide-react'
 
 export default function Navbar() {
   const { logout } = useAuth()
+  const { isHead, isOrgTeacher } = useRole()
 
   const links = [
     { to: '/', label: 'Dashboard', end: true, icon: LayoutDashboard },
@@ -12,6 +14,13 @@ export default function Navbar() {
     { to: '/fees', label: 'Fees', icon: IndianRupee },
     { to: '/scores', label: 'Scores', icon: Notebook }
   ]
+
+  if (isHead) {
+    links.push({ to: '/teachers', label: 'Teachers', icon: UserCog })
+    links.push({ to: '/suggestions', label: 'Suggestions', icon: MessageSquareText })
+  } else if (isOrgTeacher) {
+    links.push({ to: '/suggestions', label: 'Suggestions', icon: MessageSquareText })
+  }
 
   return (
     <nav className="navbar">
@@ -30,6 +39,7 @@ export default function Navbar() {
           )
         })}
       </div>
+      {isOrgTeacher && <span className="navbar__badge">View only</span>}
       <div className="navbar__right">
         <NavLink to="/profile" className={({ isActive }) => 'navbar__icon-link' + (isActive ? ' navbar__link--active' : '')} title="Profile">
           <User size={18} />

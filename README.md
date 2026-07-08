@@ -96,7 +96,44 @@ before rebuilding in Android Studio.
 
 ---
 
-## Project structure
+## 6. Updating to the Roles & Organizations version
+
+This version adds Head vs Teacher roles, solo vs organization work modes,
+teacher salary tracking, and a suggestions inbox. Two things to do once:
+
+**A. Update your Firestore security rules.** Go to Firebase Console >
+Firestore Database > Rules, and replace the rules with the contents of
+`firestore.rules` in this project. This enforces on the server (not just in
+the app) who can read/write what — org teachers can only read, only the head
+can manage teacher salaries, etc.
+
+**B. Your existing test data won't show up anymore.** Every record now
+belongs to an organization (`orgId` field), but students/attendance/fees you
+added before this update don't have that field. Easiest fix: delete your old
+test students in Firebase Console (Firestore > `students` collection) and
+re-add a couple through the app after updating — takes a minute.
+
+**C. Log in like normal.** Your existing admin login still works — since it
+has no profile yet, the app will automatically take you to the "who are you?"
+setup screen. Choose **Head**, name your center, and you'll get a join code
+to share with teachers.
+
+**D. First-time index prompts.** A few screens (Students, Test Scores,
+Suggestions) use queries that need a one-time Firestore index. If you see a
+red error in the browser console mentioning "The query requires an index,"
+click the link inside that error — it opens Firebase Console with the index
+pre-filled, just click **Create**. Takes about a minute to build, then works
+permanently.
+
+## Roles, at a glance
+
+| | Can edit data | Sees |
+|---|---|---|
+| **Head** | Yes, everything | All students, fees, attendance, scores, teacher salaries, suggestions |
+| **Solo teacher** | Yes, their own space | Only their own students/data |
+| **Org teacher** | No — view + suggest only | The organization's students, fees, attendance, scores, their own salary; can send suggestion notes to the head |
+
+
 
 ```
 src/

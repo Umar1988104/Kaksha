@@ -1,0 +1,79 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+    function myProfile() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    function myOrgId() {
+      return myProfile().orgId;
+    }
+    // Head, or a solo teacher working in their own personal space, can edit.
+    // Org teachers (mode == 'org' and role == 'teacher') are read-only.
+    function canEdit() {
+      return myProfile().role == 'head' || myProfile().mode == 'solo';
+    }
+    function inMyOrg(data) {
+      return data.orgId == myOrgId();
+    }
+
+    // Each user's own profile doc — anyone signed in can read profiles
+    // (needed so a head can list their teachers), but you can only write your own.
+    match /users/{uid} {
+      allow read: if signedIn();
+      allow write: if signedIn() && request.auth.uid == uid;
+    }
+
+    // Organizations — anyone signed in can read (needed to validate join
+    // codes before they have a profile yet); only the head can update/delete.
+    match /organizations/{orgId} {
+      allow read: if signedIn();
+      allow create: if signedIn();
+      allow update, delete: if signedIn() && resource.data.headUid == request.auth.uid;
+    }
+
+    match /students/{docId} {
+      allow read: if signedIn() && inMyOrg(resource.data);
+      allow create: if signedIn() && inMyOrg(request.resource.data) && canEdit();
+      allow update, delete: if signedIn() && inMyOrg(resource.data) && canEdit();
+    }
+
+    match /attendance/{docId} {
+      allow read: if signedIn() && inMyOrg(resource.data);
+      allow write: if signedIn() && inMyOrg(request.resource.data) && canEdit();
+    }
+
+    match /feePayments/{docId} {
+      allow read: if signedIn() && inMyOrg(resource.data);
+      allow write: if signedIn() && inMyOrg(request.resource.data) && canEdit();
+    }
+
+    match /testScores/{docId} {
+      allow read: if signedIn() && inMyOrg(resource.data);
+      allow create: if signedIn() && inMyOrg(request.resource.data) && canEdit();
+      allow update, delete: if signedIn() && inMyOrg(resource.data) && canEdit();
+    }
+
+    // Teacher salary/assignment records — head only.
+    match /teachers/{docId} {
+      allow read: if signedIn() && inMyOrg(resource.data);
+      allow write: if signedIn() && inMyOrg(request.resource.data) && myProfile().role == 'head';
+    }
+
+    match /salaryPayments/{docId} {
+      allow read: if signedIn() && inMyOrg(resource.data);
+      allow write: if signedIn() && inMyOrg(request.resource.data) && myProfile().role == 'head';
+    }
+
+    // Suggestions — any org member (head or org teacher) can read; teachers
+    // can create their own; only the head can update (mark resolved).
+    match /suggestions/{docId} {
+      allow read: if signedIn() && inMyOrg(resource.data);
+      allow create: if signedIn() && inMyOrg(request.resource.data);
+      allow update: if signedIn() && inMyOrg(resource.data) && myProfile().role == 'head';
+    }
+  }
+}

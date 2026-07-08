@@ -1,34 +1,38 @@
 import { useEffect, useMemo, useState } from 'react'
 import { collection, doc, getDocs, orderBy, query, setDoc, where } from 'firebase/firestore'
 import { db } from '../firebase'
+import { useRole } from '../context/RoleContext'
 import { todayISO } from '../utils/dates'
 
 export default function Attendance() {
+  const { orgId, canEdit } = useRole()
   const [students, setStudents] = useState([])
   const [date, setDate] = useState(todayISO())
   const [batch, setBatch] = useState('all')
-  const [marks, setMarks] = useState({}) // studentId -> 'present' | 'absent'
+  const [marks, setMarks] = useState({})
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
+    if (!orgId) return
     async function load() {
-      const snap = await getDocs(query(collection(db, 'students'), orderBy('name')))
+      const snap = await getDocs(query(collection(db, 'students'), where('orgId', '==', orgId), orderBy('name')))
       setStudents(snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((s) => s.active !== false))
       setLoading(false)
     }
     load()
-  }, [])
+  }, [orgId])
 
   useEffect(() => {
+    if (!orgId || !date) return
     async function loadMarksForDate() {
-      const snap = await getDocs(query(collection(db, 'attendance'), where('date', '==', date)))
+      const snap = await getDocs(query(collection(db, 'attendance'), where('orgId', '==', orgId), where('date', '==', date)))
       const m = {}
       snap.docs.forEach((d) => { const a = d.data(); m[a.studentId] = a.status })
       setMarks(m)
     }
-    if (date) loadMarksForDate()
-  }, [date])
+    loadMarksForDate()
+  }, [orgId, date])
 
   const batches = useMemo(() => {
     const set = new Set(students.map((s) => s.batch))
@@ -38,6 +42,7 @@ export default function Attendance() {
   const visibleStudents = batch === 'all' ? students : students.filter((s) => s.batch === batch)
 
   function toggle(studentId, status) {
+    if (!canEdit) return
     setMarks((m) => ({ ...m, [studentId]: status }))
   }
 
@@ -48,6 +53,7 @@ export default function Attendance() {
         .filter((s) => marks[s.id])
         .map((s) =>
           setDoc(doc(db, 'attendance', `${date}_${s.id}`), {
+            orgId,
             studentId: s.id,
             date,
             status: marks[s.id],
@@ -65,11 +71,13 @@ export default function Attendance() {
       <div className="page__header page__header--row">
         <div>
           <h1>Attendance</h1>
-          <p className="page__sub">Mark present/absent, then save</p>
+          <p className="page__sub">{canEdit ? 'Mark present/absent, then save' : 'View only'}</p>
         </div>
-        <button className="btn btn--primary" onClick={saveAll} disabled={saving}>
-          {saving ? 'Saving…' : 'Save attendance'}
-        </button>
+        {canEdit && (
+          <button className="btn btn--primary" onClick={saveAll} disabled={saving}>
+            {saving ? 'Saving…' : 'Save attendance'}
+          </button>
+        )}
       </div>
 
       <div className="filter-row">
@@ -96,10 +104,12 @@ export default function Attendance() {
               <button
                 className={'chip chip--present' + (marks[s.id] === 'present' ? ' chip--active' : '')}
                 onClick={() => toggle(s.id, 'present')}
+                disabled={!canEdit}
               >Present</button>
               <button
                 className={'chip chip--absent' + (marks[s.id] === 'absent' ? ' chip--active' : '')}
                 onClick={() => toggle(s.id, 'absent')}
+                disabled={!canEdit}
               >Absent</button>
             </div>
           </div>

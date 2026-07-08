@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { collection, doc, getDoc, getDocs, orderBy, query, where } from 'firebase/firestore'
 import { db } from '../firebase'
+import { useRole } from '../context/RoleContext'
 import StatusStamp from '../components/StatusStamp'
 import { buildFeeReminderLink } from '../utils/whatsapp'
 import { lastNMonthKeys, monthLabel } from '../utils/dates'
 
 export default function StudentDetail() {
   const { id } = useParams()
+  const { profile } = useRole()
   const [student, setStudent] = useState(null)
   const [payments, setPayments] = useState({})
   const [attendanceStats, setAttendanceStats] = useState({ present: 0, total: 0 })
@@ -20,8 +22,12 @@ export default function StudentDetail() {
       const sSnap = await getDoc(doc(db, 'students', id))
       if (sSnap.exists()) setStudent({ id: sSnap.id, ...sSnap.data() })
 
-      const settingsSnap = await getDoc(doc(db, 'settings', 'center'))
-      if (settingsSnap.exists()) setCenterName(settingsSnap.data().name || '')
+      if (profile?.mode === 'org' && profile?.orgId) {
+        const orgSnap = await getDoc(doc(db, 'organizations', profile.orgId))
+        if (orgSnap.exists()) setCenterName(orgSnap.data().name || '')
+      } else {
+        setCenterName(profile?.centerName || '')
+      }
 
       const paySnap = await getDocs(query(collection(db, 'feePayments'), where('studentId', '==', id)))
       const byMonth = {}
@@ -38,8 +44,8 @@ export default function StudentDetail() {
 
       setLoading(false)
     }
-    load()
-  }, [id])
+    if (profile) load()
+  }, [id, profile])
 
   if (loading) return <div className="screen-loading">Loading…</div>
   if (!student) return <div className="empty-state">Student not found.</div>

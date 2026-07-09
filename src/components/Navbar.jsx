@@ -45,7 +45,7 @@ export default function Navbar() {
           <User size={18} />
         </NavLink>
         <button className="btn btn--ghost" onClick={logout}>
-          <LogOut size={15} style={{ verticalAlign: '-3px', marginRight: 6 }} />Log out
+          <LogOut size={15} style={{ verticalAlign: '-3px' }} /><span className="btn__label"> Log out</span>
         </button>
       </div>
     </nav>

@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './context/AuthContext'
 import { RoleProvider, useRole } from './context/RoleContext'
 import ProtectedRoute from './components/ProtectedRoute'
 import Navbar from './components/Navbar'
+import BottomNav from './components/BottomNav'
 import Splash from './components/Splash'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
@@ -30,6 +31,7 @@ function AppShell({ children }) {
     <div className="app-shell">
       <Navbar />
       <main className="app-main">{children}</main>
+      <BottomNav />
       {showTour && <TourModal onClose={() => setDismissed(true)} />}
     </div>
   )

@@ -50,6 +50,9 @@ export default function Login() {
         <p className="login-card__footer">
           New here? <Link to="/signup">Create an account</Link>
         </p>
+        <p className="login-card__legal">
+          By continuing you agree to our <Link to="/terms">Terms & Conditions</Link>
+        </p>
       </div>
     </div>
   )

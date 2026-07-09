@@ -58,6 +58,9 @@ export default function Signup() {
         <p className="login-card__footer">
           Already have an account? <Link to="/login">Log in</Link>
         </p>
+        <p className="login-card__legal">
+          By continuing you agree to our <Link to="/terms">Terms & Conditions</Link>
+        </p>
       </div>
     </div>
   )

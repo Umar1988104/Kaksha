@@ -17,8 +17,12 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   // Network-first: always try the network so students/fees data and new
-  // deploys are fresh; fall back to cache only if offline.
+  // deploys are fresh; fall back to cache only if offline AND we actually
+  // have something cached for this request (avoids throwing on a cache miss).
   event.respondWith(
-    fetch(event.request).catch(() => caches.match(event.request))
+    fetch(event.request).catch(async () => {
+      const cached = await caches.match(event.request)
+      return cached || new Response('', { status: 408, statusText: 'Offline' })
+    })
   )
 })

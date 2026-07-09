@@ -13,16 +13,24 @@ import Students from './pages/Students'
 import StudentDetail from './pages/StudentDetail'
 import Attendance from './pages/Attendance'
 import Fees from './pages/Fees'
-import TestScores from './pages/TestScores'
+import Exams from './pages/Exams'
+import ExamDetail from './pages/ExamDetail'
 import Teachers from './pages/Teachers'
 import Suggestions from './pages/Suggestions'
 import Profile from './pages/Profile'
+import Terms from './pages/Terms'
+import TourModal from './components/TourModal'
 
 function AppShell({ children }) {
+  const { profile } = useRole()
+  const [dismissed, setDismissed] = useState(false)
+  const showTour = profile && !profile.hasSeenTour && !dismissed
+
   return (
     <div className="app-shell">
       <Navbar />
       <main className="app-main">{children}</main>
+      {showTour && <TourModal onClose={() => setDismissed(true)} />}
     </div>
   )
 }
@@ -57,6 +65,7 @@ function OrgRoute({ children }) {
 function AppRoutes() {
   return (
     <Routes>
+      <Route path="/terms" element={<Terms />} />
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
       <Route path="/onboarding" element={<OnboardingRoute><Onboarding /></OnboardingRoute>} />
@@ -65,7 +74,8 @@ function AppRoutes() {
       <Route path="/students/:id" element={<ProtectedRoute><AppShell><StudentDetail /></AppShell></ProtectedRoute>} />
       <Route path="/attendance" element={<ProtectedRoute><AppShell><Attendance /></AppShell></ProtectedRoute>} />
       <Route path="/fees" element={<ProtectedRoute><AppShell><Fees /></AppShell></ProtectedRoute>} />
-      <Route path="/scores" element={<ProtectedRoute><AppShell><TestScores /></AppShell></ProtectedRoute>} />
+      <Route path="/exams" element={<ProtectedRoute><AppShell><Exams /></AppShell></ProtectedRoute>} />
+      <Route path="/exams/:id" element={<ProtectedRoute><AppShell><ExamDetail /></AppShell></ProtectedRoute>} />
       <Route path="/teachers" element={<ProtectedRoute><HeadOnlyRoute><AppShell><Teachers /></AppShell></HeadOnlyRoute></ProtectedRoute>} />
       <Route path="/suggestions" element={<ProtectedRoute><OrgRoute><AppShell><Suggestions /></AppShell></OrgRoute></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute><AppShell><Profile /></AppShell></ProtectedRoute>} />

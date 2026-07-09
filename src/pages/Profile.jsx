@@ -215,6 +215,7 @@ export default function Profile() {
             scores in one place — replacing scattered notebooks and manual WhatsApp reminders.
           </p>
           <p className="detail-card__hint" style={{ marginTop: 8 }}>Version 1.0</p>
+          <p className="detail-card__hint" style={{ marginTop: 8 }}><a href="/terms" style={{ color: 'var(--indigo)', fontWeight: 600 }}>Terms & Conditions</a></p>
         </div>
       )}
 

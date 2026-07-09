@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useRole } from '../context/RoleContext'
-import { CalendarCheck, IndianRupee, LayoutDashboard, LogOut, MessageSquareText, Notebook, User, UserCog, Users } from 'lucide-react'
+import { CalendarCheck, ClipboardList, IndianRupee, LayoutDashboard, LogOut, MessageSquareText, User, UserCog, Users } from 'lucide-react'
 
 export default function Navbar() {
   const { logout } = useAuth()
@@ -12,7 +12,7 @@ export default function Navbar() {
     { to: '/students', label: 'Students', icon: Users },
     { to: '/attendance', label: 'Attendance', icon: CalendarCheck },
     { to: '/fees', label: 'Fees', icon: IndianRupee },
-    { to: '/scores', label: 'Scores', icon: Notebook }
+    { to: '/exams', label: 'Exams', icon: ClipboardList }
   ]
 
   if (isHead) {

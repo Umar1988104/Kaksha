@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { collection, doc, getDoc, getDocs, orderBy, query, where } from 'firebase/firestore'
+import { collection, doc, getDoc, getDocs, query, where } from 'firebase/firestore'
 import { db } from '../firebase'
 import { useRole } from '../context/RoleContext'
 import StatusStamp from '../components/StatusStamp'
@@ -9,49 +9,65 @@ import { lastNMonthKeys, monthLabel } from '../utils/dates'
 
 export default function StudentDetail() {
   const { id } = useParams()
-  const { profile } = useRole()
+  const { profile, orgId } = useRole()
   const [student, setStudent] = useState(null)
   const [payments, setPayments] = useState({})
   const [attendanceStats, setAttendanceStats] = useState({ present: 0, total: 0 })
-  const [scores, setScores] = useState([])
+  const [examResults, setExamResults] = useState([])
   const [loading, setLoading] = useState(true)
   const [centerName, setCenterName] = useState('')
+  const [error, setError] = useState('')
 
   useEffect(() => {
     async function load() {
-      const sSnap = await getDoc(doc(db, 'students', id))
-      if (sSnap.exists()) setStudent({ id: sSnap.id, ...sSnap.data() })
+      try {
+        setError('')
+        const sSnap = await getDoc(doc(db, 'students', id))
+        if (sSnap.exists()) setStudent({ id: sSnap.id, ...sSnap.data() })
 
-      if (profile?.mode === 'org' && profile?.orgId) {
-        const orgSnap = await getDoc(doc(db, 'organizations', profile.orgId))
-        if (orgSnap.exists()) setCenterName(orgSnap.data().name || '')
-      } else {
-        setCenterName(profile?.centerName || '')
+        if (profile?.mode === 'org' && profile?.orgId) {
+          const orgSnap = await getDoc(doc(db, 'organizations', profile.orgId))
+          if (orgSnap.exists()) setCenterName(orgSnap.data().name || '')
+        } else {
+          setCenterName(profile?.centerName || '')
+        }
+
+        // Every query includes orgId (not just studentId) — Firestore rules
+        // check orgId, and list queries must filter on every field the rule
+        // checks or the whole request gets denied, even for valid data.
+        const paySnap = await getDocs(query(collection(db, 'feePayments'), where('orgId', '==', orgId), where('studentId', '==', id)))
+        const byMonth = {}
+        paySnap.docs.forEach((d) => { const p = d.data(); byMonth[p.month] = p })
+        setPayments(byMonth)
+
+        const attSnap = await getDocs(query(collection(db, 'attendance'), where('orgId', '==', orgId), where('studentId', '==', id)))
+        const total = attSnap.size
+        const present = attSnap.docs.filter((d) => d.data().status === 'present').length
+        setAttendanceStats({ present, total })
+
+        const marksSnap = await getDocs(query(collection(db, 'examMarks'), where('orgId', '==', orgId), where('studentId', '==', id)))
+        const results = marksSnap.docs.map((d) => ({ id: d.id, ...d.data() }))
+        results.sort((a, b) => (b.date || '').localeCompare(a.date || ''))
+        setExamResults(results)
+      } catch (err) {
+        console.error('StudentDetail load failed:', err)
+        setError(err.message || 'Something went wrong loading this student.')
+      } finally {
+        setLoading(false)
       }
-
-      const paySnap = await getDocs(query(collection(db, 'feePayments'), where('studentId', '==', id)))
-      const byMonth = {}
-      paySnap.docs.forEach((d) => { const p = d.data(); byMonth[p.month] = p })
-      setPayments(byMonth)
-
-      const attSnap = await getDocs(query(collection(db, 'attendance'), where('studentId', '==', id)))
-      const total = attSnap.size
-      const present = attSnap.docs.filter((d) => d.data().status === 'present').length
-      setAttendanceStats({ present, total })
-
-      const scoreSnap = await getDocs(query(collection(db, 'testScores'), where('studentId', '==', id), orderBy('date', 'desc')))
-      setScores(scoreSnap.docs.map((d) => ({ id: d.id, ...d.data() })))
-
-      setLoading(false)
     }
-    if (profile) load()
-  }, [id, profile])
+    if (profile && orgId) load()
+  }, [id, profile, orgId])
 
   if (loading) return <div className="screen-loading">Loading…</div>
+  if (error) return <div className="empty-state">{error}</div>
   if (!student) return <div className="empty-state">Student not found.</div>
 
   const months = lastNMonthKeys(6)
   const attendancePct = attendanceStats.total ? Math.round((attendanceStats.present / attendanceStats.total) * 100) : null
+  const examAvgPct = examResults.length
+    ? Math.round((examResults.reduce((sum, r) => sum + (r.marksObtained / r.totalMarks), 0) / examResults.length) * 100)
+    : null
 
   return (
     <div className="page">
@@ -69,6 +85,12 @@ export default function StudentDetail() {
         </section>
 
         <section className="detail-card">
+          <h3>Exam average</h3>
+          <div className="detail-card__big">{examAvgPct !== null ? `${examAvgPct}%` : '—'}</div>
+          <p className="detail-card__hint">Across {examResults.length} exam{examResults.length === 1 ? '' : 's'}</p>
+        </section>
+
+        <section className="detail-card detail-card--wide">
           <h3>Fee history (last 6 months)</h3>
           <div className="fee-history">
             {months.map((m) => {
@@ -100,18 +122,20 @@ export default function StudentDetail() {
         </section>
 
         <section className="detail-card detail-card--wide">
-          <h3>Test scores</h3>
-          {scores.length === 0 ? (
-            <p className="detail-card__hint">No test scores recorded yet.</p>
+          <h3>Report card — exam history</h3>
+          {examResults.length === 0 ? (
+            <p className="detail-card__hint">No exam marks recorded yet.</p>
           ) : (
             <table className="simple-table">
-              <thead><tr><th>Date</th><th>Test</th><th>Marks</th></tr></thead>
+              <thead><tr><th>Date</th><th>Exam</th><th>Subject</th><th>Marks</th><th>%</th></tr></thead>
               <tbody>
-                {scores.map((s) => (
-                  <tr key={s.id}>
-                    <td>{s.date}</td>
-                    <td>{s.testName}</td>
-                    <td>{s.marksObtained} / {s.totalMarks}</td>
+                {examResults.map((r) => (
+                  <tr key={r.id}>
+                    <td>{r.date}</td>
+                    <td>{r.examName}</td>
+                    <td>{r.subject}</td>
+                    <td>{r.marksObtained} / {r.totalMarks}</td>
+                    <td>{Math.round((r.marksObtained / r.totalMarks) * 100)}%</td>
                   </tr>
                 ))}
               </tbody>

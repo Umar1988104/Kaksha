@@ -383,6 +383,79 @@ a { color: inherit; text-decoration: none; }
 
 .chip:disabled { opacity: 0.55; cursor: default; }
 
+.login-card__legal { text-align: center; font-size: 12px; color: #8891A0; margin-top: 10px; }
+.login-card__legal a { color: #5B6474; text-decoration: underline; }
+
+/* Exams */
+.exam-row {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--white); border: 1px solid var(--paper-line); border-radius: var(--radius);
+  padding: 14px 16px; transition: box-shadow 0.15s, border-color 0.15s;
+}
+.exam-row:hover { box-shadow: 0 2px 8px rgba(28,31,42,0.07); border-color: #D4D9E2; }
+.exam-row__icon {
+  width: 38px; height: 38px; border-radius: 9px; background: var(--paper); color: var(--amber-deep);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.exam-row__main { flex: 1; }
+.exam-row__progress { font-family: var(--font-mono); font-size: 13px; color: #5B6474; white-space: nowrap; }
+
+.mark-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  background: var(--white); border: 1px solid var(--paper-line); border-radius: var(--radius);
+  padding: 12px 16px;
+}
+.mark-row__input { display: flex; align-items: center; gap: 8px; font-family: var(--font-mono); color: #5B6474; }
+.mark-row__input input {
+  width: 70px; padding: 7px 10px; border: 1px solid var(--paper-line); border-radius: 8px;
+  font-family: var(--font-mono); text-align: right;
+}
+
+/* Terms page */
+.terms-page { min-height: 100vh; background: var(--paper); padding: 40px 20px; }
+.terms-page__inner { max-width: 640px; margin: 0 auto; background: var(--white); border-radius: 14px; padding: 32px; border: 1px solid var(--paper-line); }
+.terms-page__inner h1 { font-family: var(--font-display); margin-top: 12px; }
+.terms-page__inner section { margin-top: 22px; }
+.terms-page__inner h3 { font-size: 15px; margin-bottom: 6px; }
+.terms-page__inner p { font-size: 14px; color: #444C5C; line-height: 1.6; margin: 0; }
+
+/* Dashboard */
+.dash-hero { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+.dash-hero__greeting { font-size: 13px; color: #8891A0; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+.dash-hero__title { font-family: var(--font-display); font-size: 26px; margin: 4px 0 0; }
+.dash-hero__actions { display: flex; gap: 8px; }
+.stat-card__icon {
+  width: 34px; height: 34px; border-radius: 9px; background: var(--paper); color: var(--indigo);
+  display: flex; align-items: center; justify-content: center; margin-bottom: 10px;
+}
+.stat-card__icon--accent { background: var(--green-bg); color: var(--green); }
+.stat-card__icon--danger { background: var(--red-bg); color: var(--red); }
+.dash-callout {
+  display: flex; justify-content: space-between; align-items: center; gap: 10px;
+  background: var(--red-bg); border: 1px solid rgba(193,68,58,0.25); border-radius: var(--radius);
+  padding: 14px 16px; margin-top: 16px; color: var(--red); font-size: 14px; font-weight: 600;
+}
+.dash-callout__link { white-space: nowrap; }
+
+/* Tour modal */
+.tour-modal { position: relative; text-align: center; max-width: 380px; }
+.tour-modal__close {
+  position: absolute; top: 14px; right: 14px; background: transparent; border: none; color: #8891A0;
+}
+.tour-modal__icon {
+  width: 52px; height: 52px; border-radius: 14px; background: var(--indigo); color: var(--white);
+  display: flex; align-items: center; justify-content: center; margin: 0 auto 14px;
+}
+.tour-modal__eyebrow {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--amber-deep); margin-bottom: 6px;
+}
+.tour-modal h2 { margin: 4px 0 8px; }
+.tour-modal__body { font-size: 14px; color: #444C5C; line-height: 1.55; margin-bottom: 18px; }
+.tour-modal__dots { display: flex; gap: 6px; justify-content: center; margin-bottom: 18px; }
+.tour-modal__dot { width: 6px; height: 6px; border-radius: 50%; background: var(--paper-line); }
+.tour-modal__dot--active { background: var(--indigo); width: 16px; border-radius: 4px; }
+
 /* Mobile */
 @media (max-width: 640px) {
   .app-main { padding: 16px 14px 48px; }

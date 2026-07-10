@@ -72,9 +72,12 @@ export default function StudentDetail() {
   return (
     <div className="page">
       <Link to="/students" className="back-link">← Back to students</Link>
-      <div className="page__header">
-        <h1>{student.name}</h1>
-        <p className="page__sub">{student.batch} · {student.subject} · ₹{student.monthlyFee}/mo</p>
+      <div className="page__header student-detail-header">
+        {student.photo ? <img src={student.photo} alt="" className="student-detail-header__avatar" /> : <div className="student-detail-header__avatar student-detail-header__avatar--fallback">{student.name.charAt(0).toUpperCase()}</div>}
+        <div>
+          <h1>{student.name}</h1>
+          <p className="page__sub">{student.batch} · {student.subject} · ₹{student.monthlyFee}/mo</p>
+        </div>
       </div>
 
       <div className="detail-grid">

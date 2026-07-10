@@ -4,6 +4,8 @@ import { addDoc, collection, getDocs, orderBy, query, where } from 'firebase/fir
 import { db } from '../firebase'
 import { useRole } from '../context/RoleContext'
 import { ClipboardList, Plus } from 'lucide-react'
+import EmptyState from '../components/EmptyState'
+import { SkeletonList } from '../components/Skeleton'
 
 const emptyForm = { name: '', subject: '', batch: '', date: new Date().toISOString().slice(0, 10), totalMarks: '' }
 
@@ -62,7 +64,7 @@ export default function Exams() {
     return students.filter((s) => s.batch === batch).length
   }
 
-  if (loading) return <div className="screen-loading">Loading exams…</div>
+  if (loading) return <div className="page"><SkeletonList rows={3} /></div>
 
   return (
     <div className="page">
@@ -75,9 +77,13 @@ export default function Exams() {
       </div>
 
       {exams.length === 0 ? (
-        <div className="empty-state">
-          {canEdit ? 'No exams yet. Add one to start recording marks.' : 'No exams recorded yet.'}
-        </div>
+        <EmptyState
+          icon={ClipboardList}
+          title="No exams yet"
+          message={canEdit ? 'Add one to start recording marks and building report cards.' : "Your center head hasn't added any exams yet."}
+          actionLabel={canEdit ? '+ Add exam' : undefined}
+          onAction={canEdit ? () => setShowForm(true) : undefined}
+        />
       ) : (
         <div className="card-list">
           {exams.map((ex) => {

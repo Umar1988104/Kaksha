@@ -125,6 +125,61 @@ click the link inside that error — it opens Firebase Console with the index
 pre-filled, just click **Create**. Takes about a minute to build, then works
 permanently.
 
+## 7. This update: Photos, Notices, Calendar, Search & Notifications
+
+**What's new:**
+- Student and profile photos with circular crop — stored as small compressed
+  thumbnails directly in Firestore (not Firebase Storage), so this stays on
+  the free plan with no new billing setup required.
+- Profile page now has a proper view/edit mode — tap "Update" to change
+  anything, otherwise it's read-only with a nudge if it's incomplete.
+- Notifications — a bell icon in the top bar. Teachers submitting a
+  suggestion notifies the head; the head resolving one notifies the teacher;
+  a teacher joining an org notifies the head. Real-time, no refresh needed.
+- Global search (top bar) — search students and exams by name/batch/subject.
+- Notices/homework board — head or solo posts announcements, optionally
+  pinned to a date so they also show on the new Calendar page.
+- Calendar (under "More" on mobile, or the top nav on desktop) — shows exams
+  and dated notices on a month grid.
+- Send absentee list — on the Attendance page, after marking absences, one
+  tap opens your device's native share sheet (or copies to clipboard) with
+  the list ready to send.
+- Loading skeletons and friendlier empty states across the app.
+
+**To apply:**
+1. Copy `public`, `src`, `firestore.rules`, and `README.md` over your project
+2. `npm install` — this update adds one new package (`react-easy-crop`) for
+   the photo cropping tool
+3. **Update your Firestore rules again** — two new collections
+   (`notices`, `notifications`) need rules added; copy the latest
+   `firestore.rules` into Firebase Console → Firestore → Rules → Publish
+4. Test: upload a student photo, post a notice, check the calendar, submit a
+   suggestion (as a teacher) and confirm the head sees a notification
+
+## 8. This update: Forgot Password, Left Students, Offline Support
+
+**What's new:**
+- **Forgot password** — a link on the login screen sends a real password
+  reset email via Firebase. No setup needed on your end.
+- **Left students** — Students page now has an Active/Left toggle. "Remove"
+  is now "Mark as left" — it hides the student from daily use but keeps
+  every attendance/fee/exam record intact, and you can restore them anytime.
+  Permanent deletion is still there, but tucked into the Left tab with a
+  stronger warning since it's irreversible.
+- **Offline support** — the app now works without signal. Mark attendance,
+  collect fees, or enter exam marks with no connection, and changes save to
+  your device and sync automatically once you're back online. A small
+  banner appears at the top when you're offline, so it's clear what's
+  happening rather than the app looking broken.
+
+**To apply:**
+1. Copy `src` over your project (no changes to `public` or `firestore.rules`
+   this time — this update didn't need new permissions)
+2. No new npm packages, so `npm install` is optional, but safe to run anyway
+3. Test: turn on airplane mode, mark some attendance, turn airplane mode
+   back off — the record should sync (check Firestore Console after a
+   minute to confirm it landed)
+
 ## Roles, at a glance
 
 | | Can edit data | Sees |

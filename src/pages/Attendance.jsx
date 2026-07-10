@@ -3,6 +3,7 @@ import { collection, doc, getDocs, orderBy, query, setDoc, where } from 'firebas
 import { db } from '../firebase'
 import { useRole } from '../context/RoleContext'
 import { todayISO } from '../utils/dates'
+import { Send } from 'lucide-react'
 
 export default function Attendance() {
   const { orgId, canEdit } = useRole()
@@ -12,6 +13,7 @@ export default function Attendance() {
   const [marks, setMarks] = useState({})
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [shareCopied, setShareCopied] = useState(false)
 
   useEffect(() => {
     if (!orgId) return
@@ -40,6 +42,7 @@ export default function Attendance() {
   }, [students])
 
   const visibleStudents = batch === 'all' ? students : students.filter((s) => s.batch === batch)
+  const absentStudents = visibleStudents.filter((s) => marks[s.id] === 'absent')
 
   function toggle(studentId, status) {
     if (!canEdit) return
@@ -48,20 +51,44 @@ export default function Attendance() {
 
   async function saveAll() {
     setSaving(true)
-    await Promise.all(
-      visibleStudents
-        .filter((s) => marks[s.id])
-        .map((s) =>
-          setDoc(doc(db, 'attendance', `${date}_${s.id}`), {
-            orgId,
-            studentId: s.id,
-            date,
-            status: marks[s.id],
-            batch: s.batch
-          })
-        )
-    )
+    const writes = visibleStudents
+      .filter((s) => marks[s.id])
+      .map((s) =>
+        setDoc(doc(db, 'attendance', `${date}_${s.id}`), {
+          orgId,
+          studentId: s.id,
+          date,
+          status: marks[s.id],
+          batch: s.batch
+        })
+      )
+    if (navigator.onLine) {
+      // Online: wait for the actual save to finish, like normal.
+      await Promise.all(writes)
+    } else {
+      // Offline: Firestore has already queued these writes locally (and
+      // updated on-screen state instantly) — but the promises won't
+      // resolve until connectivity returns, which could be a while. Don't
+      // block the UI on that; just let the save happen in the background.
+    }
     setSaving(false)
+  }
+
+  async function shareAbsentList() {
+    const dateLabel = new Date(date).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })
+    const batchLabel = batch === 'all' ? 'All batches' : batch
+    const names = absentStudents.map((s) => `- ${s.name} (${s.batch})`).join('\n')
+    const text = `Absentee list — ${dateLabel}\n${batchLabel}\n\n${names}`
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ text })
+      } catch (err) { /* user cancelled the share sheet — not an error */ }
+    } else {
+      await navigator.clipboard.writeText(text)
+      setShareCopied(true)
+      setTimeout(() => setShareCopied(false), 2000)
+    }
   }
 
   if (loading) return <div className="screen-loading">Loading…</div>
@@ -92,6 +119,13 @@ export default function Attendance() {
           </select>
         </label>
       </div>
+
+      {absentStudents.length > 0 && (
+        <button className="btn btn--whatsapp btn--sm" style={{ marginBottom: 14 }} onClick={shareAbsentList}>
+          <Send size={13} style={{ verticalAlign: '-2px', marginRight: 6 }} />
+          {shareCopied ? 'Copied to clipboard!' : `Send absentee list (${absentStudents.length})`}
+        </button>
+      )}
 
       <div className="card-list">
         {visibleStudents.map((s) => (

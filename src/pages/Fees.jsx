@@ -5,6 +5,7 @@ import { useRole } from '../context/RoleContext'
 import StatusStamp from '../components/StatusStamp'
 import { buildFeeReminderLink } from '../utils/whatsapp'
 import { currentMonthKey, lastNMonthKeys, monthLabel } from '../utils/dates'
+import { SkeletonList } from '../components/Skeleton'
 
 export default function Fees() {
   const { orgId, canEdit, profile } = useRole()
@@ -39,7 +40,7 @@ export default function Fees() {
   useEffect(() => { if (orgId) load() }, [orgId])
 
   async function markPaid(student) {
-    await setDoc(doc(db, 'feePayments', `${student.id}_${month}`), {
+    const write = setDoc(doc(db, 'feePayments', `${student.id}_${month}`), {
       orgId,
       studentId: student.id,
       month,
@@ -47,17 +48,21 @@ export default function Fees() {
       amountPaid: student.monthlyFee,
       paidDate: new Date().toISOString().slice(0, 10)
     })
+    if (navigator.onLine) await write
+    // Reads locally cached data even before the write reaches the server,
+    // so the UI updates instantly whether online or offline.
     load()
   }
 
   async function markDue(student) {
-    await setDoc(doc(db, 'feePayments', `${student.id}_${month}`), {
+    const write = setDoc(doc(db, 'feePayments', `${student.id}_${month}`), {
       orgId,
       studentId: student.id,
       month,
       status: 'due',
       amountPaid: 0
     })
+    if (navigator.onLine) await write
     load()
   }
 
@@ -70,7 +75,7 @@ export default function Fees() {
       return true
     })
 
-  if (loading) return <div className="screen-loading">Loading fees…</div>
+  if (loading) return <div className="page"><SkeletonList rows={4} /></div>
 
   return (
     <div className="page">

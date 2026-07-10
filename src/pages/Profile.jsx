@@ -3,24 +3,36 @@ import { collection, doc, getDoc, getDocs, query, setDoc, where } from 'firebase
 import { db } from '../firebase'
 import { useAuth } from '../context/AuthContext'
 import { useRole } from '../context/RoleContext'
+import { sendNotification } from '../utils/notifications'
+import ConfirmModal from '../components/ConfirmModal'
+import PhotoUploader from '../components/PhotoUploader'
 import {
-  Building2, Check, Copy, HelpCircle, Info, LogOut, Mail, User, Users
+  Building2, Check, Copy, HelpCircle, Info, LogOut, Mail, Pencil, User, Users
 } from 'lucide-react'
+
+const FIELD_LABELS = {
+  phone: 'Mobile number',
+  gender: 'Gender',
+  dob: 'Date of birth',
+  address: 'Address'
+}
 
 export default function Profile() {
   const { user, logout } = useAuth()
   const { profile, isHead, isOrgTeacher, mode, orgId, refreshProfile } = useRole()
 
-  const [form, setForm] = useState({ name: '', phone: '', address: '', gender: '', dob: '', centerName: '' })
+  const [form, setForm] = useState({ name: '', phone: '', address: '', gender: '', dob: '', centerName: '', photo: null })
+  const [isEditing, setIsEditing] = useState(false)
   const [saved, setSaved] = useState(false)
   const [loading, setLoading] = useState(true)
   const [orgCode, setOrgCode] = useState('')
   const [copied, setCopied] = useState(false)
-  const [section, setSection] = useState('profile') // profile | settings | help | about
+  const [section, setSection] = useState('profile')
 
   const [joinCodeInput, setJoinCodeInput] = useState('')
   const [switching, setSwitching] = useState(false)
   const [switchError, setSwitchError] = useState('')
+  const [confirmingLogout, setConfirmingLogout] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -31,8 +43,12 @@ export default function Profile() {
           address: profile.address || '',
           gender: profile.gender || '',
           dob: profile.dob || '',
-          centerName: profile.centerName || ''
+          centerName: profile.centerName || '',
+          photo: profile.photo || null
         })
+        // If the profile is essentially empty, start straight in edit mode
+        // with a nudge instead of an empty-looking view screen.
+        if (!profile.phone && !profile.address && !profile.dob) setIsEditing(true)
       }
       if (isHead && orgId) {
         const orgSnap = await getDoc(doc(db, 'organizations', orgId))
@@ -47,6 +63,7 @@ export default function Profile() {
     e.preventDefault()
     await setDoc(doc(db, 'users', user.uid), { ...form }, { merge: true })
     setSaved(true)
+    setIsEditing(false)
     await refreshProfile()
     setTimeout(() => setSaved(false), 2000)
   }
@@ -72,6 +89,16 @@ export default function Profile() {
       }
       const org = snap.docs[0]
       await setDoc(doc(db, 'users', user.uid), { mode: 'org', orgId: org.id }, { merge: true })
+      try {
+        await sendNotification({
+          orgId: org.id,
+          targetUid: org.data().headUid,
+          type: 'joined',
+          title: 'New teacher joined',
+          message: `${form.name || 'A teacher'} joined your organization.`,
+          link: '/teachers'
+        })
+      } catch (err) { /* non-critical */ }
       await refreshProfile()
       setJoinCodeInput('')
     } catch (err) {
@@ -90,6 +117,7 @@ export default function Profile() {
   if (loading) return <div className="screen-loading">Loading…</div>
 
   const initials = (form.name || user?.email || '?').trim().charAt(0).toUpperCase()
+  const isProfileIncomplete = !form.phone && !form.address && !form.dob
 
   return (
     <div className="page">
@@ -99,7 +127,7 @@ export default function Profile() {
       </div>
 
       <div className="profile-card">
-        <div className="profile-avatar">{initials}</div>
+        {form.photo ? <img src={form.photo} alt="" className="profile-avatar profile-avatar--photo" /> : <div className="profile-avatar">{initials}</div>}
         <div>
           <div className="profile-card__name">{form.name || 'Add your name'}</div>
           <div className="profile-card__email"><Mail size={14} /> {user?.email}</div>
@@ -117,37 +145,64 @@ export default function Profile() {
       </div>
 
       {section === 'profile' && (
-        <form className="detail-card" onSubmit={handleSave}>
-          <div className="form-grid">
-            <label>Full name
-              <input className="search-input" style={{ margin: 0 }} value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
-            </label>
-            <label>Mobile number
-              <input className="search-input" style={{ margin: 0 }} value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} placeholder="10-digit number" />
-            </label>
-            <label>Gender
-              <select className="search-input" style={{ margin: 0 }} value={form.gender} onChange={(e) => setForm((f) => ({ ...f, gender: e.target.value }))}>
-                <option value="">Prefer not to say</option>
-                <option value="female">Female</option>
-                <option value="male">Male</option>
-                <option value="other">Other</option>
-              </select>
-            </label>
-            <label>Date of birth
-              <input type="date" className="search-input" style={{ margin: 0 }} value={form.dob} onChange={(e) => setForm((f) => ({ ...f, dob: e.target.value }))} />
-            </label>
-            <label style={{ gridColumn: '1 / -1' }}>Address
-              <input className="search-input" style={{ margin: 0 }} value={form.address} onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))} placeholder="City, area" />
-            </label>
-            {mode === 'solo' && (
-              <label style={{ gridColumn: '1 / -1' }}>Name shown on fee reminders
-                <input className="search-input" style={{ margin: 0 }} value={form.centerName} onChange={(e) => setForm((f) => ({ ...f, centerName: e.target.value }))} placeholder="e.g. Priya's Tuition Classes" />
+        isEditing ? (
+          <form className="detail-card" onSubmit={handleSave}>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+              <PhotoUploader value={form.photo} onChange={(photo) => setForm((f) => ({ ...f, photo }))} size={88} label="Profile photo" />
+            </div>
+            <div className="form-grid">
+              <label>Full name
+                <input className="search-input" style={{ margin: 0 }} value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
               </label>
+              <label>Mobile number
+                <input className="search-input" style={{ margin: 0 }} value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} placeholder="10-digit number" />
+              </label>
+              <label>Gender
+                <select className="search-input" style={{ margin: 0 }} value={form.gender} onChange={(e) => setForm((f) => ({ ...f, gender: e.target.value }))}>
+                  <option value="">Prefer not to say</option>
+                  <option value="female">Female</option>
+                  <option value="male">Male</option>
+                  <option value="other">Other</option>
+                </select>
+              </label>
+              <label>Date of birth
+                <input type="date" className="search-input" style={{ margin: 0 }} value={form.dob} onChange={(e) => setForm((f) => ({ ...f, dob: e.target.value }))} />
+              </label>
+              <label style={{ gridColumn: '1 / -1' }}>Address
+                <input className="search-input" style={{ margin: 0 }} value={form.address} onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))} placeholder="City, area" />
+              </label>
+              {mode === 'solo' && (
+                <label style={{ gridColumn: '1 / -1' }}>Name shown on fee reminders
+                  <input className="search-input" style={{ margin: 0 }} value={form.centerName} onChange={(e) => setForm((f) => ({ ...f, centerName: e.target.value }))} placeholder="e.g. Priya's Tuition Classes" />
+                </label>
+              )}
+            </div>
+            <div className="modal-form__actions" style={{ justifyContent: 'flex-start', marginTop: 14 }}>
+              <button className="btn btn--primary" type="submit">Save changes</button>
+              {!isProfileIncomplete && <button type="button" className="btn btn--ghost" onClick={() => setIsEditing(false)}>Cancel</button>}
+            </div>
+            {saved && <p className="form-success">Saved.</p>}
+          </form>
+        ) : (
+          <div className="detail-card">
+            {isProfileIncomplete && (
+              <div className="profile-nudge">Your profile isn't complete yet — add your details so they're on hand when needed.</div>
             )}
+            <div className="profile-view-grid">
+              {Object.entries(FIELD_LABELS).map(([key, label]) => (
+                <div key={key} className="profile-view-field">
+                  <div className="profile-view-field__label">{label}</div>
+                  <div className={'profile-view-field__value' + (!form[key] ? ' profile-view-field__value--empty' : '')}>
+                    {form[key] || 'Not added'}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <button className="btn btn--primary btn--sm" style={{ marginTop: 16 }} onClick={() => setIsEditing(true)}>
+              <Pencil size={13} style={{ verticalAlign: '-2px', marginRight: 6 }} />Update
+            </button>
           </div>
-          <button className="btn btn--primary" type="submit" style={{ marginTop: 14 }}>Save changes</button>
-          {saved && <p className="form-success">Saved.</p>}
-        </form>
+        )
       )}
 
       {section === 'settings' && (
@@ -219,9 +274,19 @@ export default function Profile() {
         </div>
       )}
 
-      <button className="btn btn--ghost btn--danger" style={{ marginTop: 20 }} onClick={logout}>
+      <button className="btn btn--ghost btn--danger" style={{ marginTop: 20 }} onClick={() => setConfirmingLogout(true)}>
         <LogOut size={15} style={{ verticalAlign: '-3px', marginRight: 6 }} />Log out
       </button>
+
+      {confirmingLogout && (
+        <ConfirmModal
+          title="Log out?"
+          message="You'll need to log in again to access your data."
+          confirmLabel="Log out"
+          onConfirm={logout}
+          onCancel={() => setConfirmingLogout(false)}
+        />
+      )}
     </div>
   )
 }

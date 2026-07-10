@@ -8,6 +8,7 @@ import {
   CalendarCheck, ClipboardList, IndianRupee, Plus, Users, Wallet,
   UserPlus, MessageSquareText
 } from 'lucide-react'
+import { SkeletonStatGrid } from '../components/Skeleton'
 
 export default function Dashboard() {
   const { orgId, isOrgTeacher, canEdit, profile } = useRole()
@@ -65,7 +66,7 @@ export default function Dashboard() {
     load()
   }, [orgId])
 
-  if (loading) return <div className="screen-loading">Loading dashboard…</div>
+  if (loading) return <div className="page"><div className="skeleton" style={{ height: 22, width: 140, marginBottom: 20 }} /><SkeletonStatGrid /></div>
 
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
@@ -90,7 +91,9 @@ export default function Dashboard() {
           <div className="dash-hero__greeting-line">{greeting}{profile?.name ? `, ${profile.name.split(' ')[0]}` : ''} 👋</div>
           <p className="dash-hero__sub">Here's what's happening today.</p>
         </div>
-        <Link to="/profile" className="dash-hero__avatar">{initials}</Link>
+        <Link to="/profile" className="dash-hero__avatar">
+          {profile?.photo ? <img src={profile.photo} alt="" /> : initials}
+        </Link>
       </div>
 
       <div className="overview-card">

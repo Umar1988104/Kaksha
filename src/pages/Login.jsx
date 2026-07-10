@@ -41,6 +41,7 @@ export default function Login() {
             Password
             <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
           </label>
+          <Link to="/forgot-password" className="login-form__forgot">Forgot password?</Link>
           {error && <div className="form-error">{error}</div>}
           <button className="btn btn--primary" type="submit" disabled={loading}>
             {loading ? 'Signing in…' : 'Sign in'}

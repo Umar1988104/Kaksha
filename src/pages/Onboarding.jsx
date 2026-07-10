@@ -4,6 +4,7 @@ import { db } from '../firebase'
 import { useAuth } from '../context/AuthContext'
 import { useRole } from '../context/RoleContext'
 import { generateOrgCode } from '../utils/orgCode'
+import { sendNotification } from '../utils/notifications'
 import { Building2, Check, GraduationCap, Users } from 'lucide-react'
 
 export default function Onboarding() {
@@ -87,6 +88,16 @@ export default function Onboarding() {
         email: user.email,
         createdAt: new Date().toISOString()
       })
+      try {
+        await sendNotification({
+          orgId: org.id,
+          targetUid: org.data().headUid,
+          type: 'joined',
+          title: 'New teacher joined',
+          message: `${name || 'A teacher'} joined your organization.`,
+          link: '/teachers'
+        })
+      } catch (err) { /* non-critical */ }
       await refreshProfile()
     } catch (err) {
       setError('Something went wrong. Please try again.')

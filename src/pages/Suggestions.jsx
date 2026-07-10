@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react'
-import { addDoc, collection, doc, getDocs, orderBy, query, updateDoc, where } from 'firebase/firestore'
+import { addDoc, collection, doc, getDoc, getDocs, orderBy, query, updateDoc, where } from 'firebase/firestore'
 import { db } from '../firebase'
 import { useAuth } from '../context/AuthContext'
 import { useRole } from '../context/RoleContext'
+import { sendNotification } from '../utils/notifications'
 import { CheckCircle2, Circle, MessageSquareText } from 'lucide-react'
+import EmptyState from '../components/EmptyState'
+import { SkeletonList } from '../components/Skeleton'
 
 export default function Suggestions() {
   const { user } = useAuth()
@@ -35,19 +38,45 @@ export default function Suggestions() {
       status: 'open',
       createdAt: new Date().toISOString()
     })
+
+    // Notify the head — look up who that is via the organization doc.
+    try {
+      const orgSnap = await getDoc(doc(db, 'organizations', orgId))
+      if (orgSnap.exists()) {
+        await sendNotification({
+          orgId,
+          targetUid: orgSnap.data().headUid,
+          type: 'suggestion',
+          title: 'New suggestion',
+          message: `${profile?.name || 'A teacher'}: "${message.trim().slice(0, 60)}${message.trim().length > 60 ? '…' : ''}"`,
+          link: '/suggestions'
+        })
+      }
+    } catch (err) { /* notification failing shouldn't block the suggestion itself */ }
+
     setMessage('')
     setSending(false)
     load()
   }
 
-  async function resolve(id) {
+  async function resolve(id, suggestion) {
     await updateDoc(doc(db, 'suggestions', id), { status: 'resolved' })
+    try {
+      await sendNotification({
+        orgId,
+        targetUid: suggestion.teacherId,
+        type: 'resolved',
+        title: 'Your suggestion was resolved',
+        message: suggestion.message.slice(0, 60),
+        link: '/suggestions'
+      })
+    } catch (err) { /* non-critical */ }
     load()
   }
 
   const visible = suggestions.filter((s) => filter === 'all' || s.status === filter)
 
-  if (loading) return <div className="screen-loading">Loading…</div>
+  if (loading) return <div className="page"><SkeletonList rows={3} /></div>
 
   return (
     <div className="page">
@@ -88,9 +117,11 @@ export default function Suggestions() {
       )}
 
       {visible.length === 0 ? (
-        <div className="empty-state">
-          {isHead ? 'No suggestions here yet.' : "You haven't sent any suggestions yet."}
-        </div>
+        <EmptyState
+          icon={MessageSquareText}
+          title={isHead ? 'No suggestions here yet' : "You haven't sent any suggestions yet"}
+          message={isHead ? "When a teacher sends a note or update request, it'll show up here." : 'Got feedback or a request for your center head? Send it above.'}
+        />
       ) : (
         <div className="card-list">
           {visible.map((s) => (
@@ -105,7 +136,7 @@ export default function Suggestions() {
                 </div>
               </div>
               {isHead && s.status !== 'resolved' && (
-                <button className="btn btn--ghost btn--sm" onClick={() => resolve(s.id)}>Mark resolved</button>
+                <button className="btn btn--ghost btn--sm" onClick={() => resolve(s.id, s)}>Mark resolved</button>
               )}
             </div>
           ))}

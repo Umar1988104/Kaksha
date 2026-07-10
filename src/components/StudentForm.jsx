@@ -1,6 +1,7 @@
 import { useState } from 'react'
+import PhotoUploader from './PhotoUploader'
 
-const empty = { name: '', phone: '', parentPhone: '', batch: '', subject: '', monthlyFee: '' }
+const empty = { name: '', phone: '', parentPhone: '', batch: '', subject: '', monthlyFee: '', photo: null }
 
 export default function StudentForm({ initial, onSave, onCancel }) {
   const [form, setForm] = useState(initial || empty)
@@ -16,6 +17,9 @@ export default function StudentForm({ initial, onSave, onCancel }) {
 
   return (
     <form className="modal-form" onSubmit={handleSubmit}>
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 4 }}>
+        <PhotoUploader value={form.photo} onChange={(photo) => update('photo', photo)} size={76} />
+      </div>
       <label>
         Student name
         <input value={form.name} onChange={(e) => update('name', e.target.value)} required autoFocus />

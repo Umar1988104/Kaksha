@@ -1,11 +1,17 @@
+import { useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useRole } from '../context/RoleContext'
-import { CalendarCheck, ClipboardList, IndianRupee, LayoutDashboard, LogOut, MessageSquareText, User, UserCog, Users } from 'lucide-react'
+import { CalendarCheck, CalendarDays, ClipboardList, IndianRupee, LayoutDashboard, LogOut, Megaphone, MessageSquareText, Search, User, UserCog, Users } from 'lucide-react'
+import ConfirmModal from './ConfirmModal'
+import NotificationBell from './NotificationBell'
+import GlobalSearch from './GlobalSearch'
 
 export default function Navbar() {
   const { logout } = useAuth()
   const { isHead, isOrgTeacher } = useRole()
+  const [confirmingLogout, setConfirmingLogout] = useState(false)
+  const [showSearch, setShowSearch] = useState(false)
 
   const links = [
     { to: '/', label: 'Dashboard', end: true, icon: LayoutDashboard },
@@ -21,6 +27,9 @@ export default function Navbar() {
   } else if (isOrgTeacher) {
     links.push({ to: '/suggestions', label: 'Suggestions', icon: MessageSquareText })
   }
+  links.push({ to: '/notices', label: 'Notices', icon: Megaphone })
+  links.push({ to: '/calendar', label: 'Calendar', icon: CalendarDays })
+  links.push({ to: '/profile', label: 'Profile', icon: User })
 
   return (
     <nav className="navbar">
@@ -41,13 +50,26 @@ export default function Navbar() {
       </div>
       {isOrgTeacher && <span className="navbar__badge">View only</span>}
       <div className="navbar__right">
-        <NavLink to="/profile" className={({ isActive }) => 'navbar__icon-link' + (isActive ? ' navbar__link--active' : '')} title="Profile">
-          <User size={18} />
-        </NavLink>
-        <button className="btn btn--ghost" onClick={logout}>
-          <LogOut size={15} style={{ verticalAlign: '-3px' }} /><span className="btn__label"> Log out</span>
+        <button className="navbar__icon-link" onClick={() => setShowSearch(true)} title="Search">
+          <Search size={18} />
+        </button>
+        <NotificationBell />
+        <button className="navbar__icon-link" onClick={() => setConfirmingLogout(true)} title="Log out">
+          <LogOut size={17} />
         </button>
       </div>
+
+      {showSearch && <GlobalSearch onClose={() => setShowSearch(false)} />}
+
+      {confirmingLogout && (
+        <ConfirmModal
+          title="Log out?"
+          message="You'll need to log in again to access your data."
+          confirmLabel="Log out"
+          onConfirm={logout}
+          onCancel={() => setConfirmingLogout(false)}
+        />
+      )}
     </nav>
   )
 }

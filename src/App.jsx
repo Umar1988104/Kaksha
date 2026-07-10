@@ -5,9 +5,11 @@ import { RoleProvider, useRole } from './context/RoleContext'
 import ProtectedRoute from './components/ProtectedRoute'
 import Navbar from './components/Navbar'
 import BottomNav from './components/BottomNav'
+import OfflineBanner from './components/OfflineBanner'
 import Splash from './components/Splash'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
+import ForgotPassword from './pages/ForgotPassword'
 import Onboarding from './pages/Onboarding'
 import Dashboard from './pages/Dashboard'
 import Students from './pages/Students'
@@ -18,6 +20,8 @@ import Exams from './pages/Exams'
 import ExamDetail from './pages/ExamDetail'
 import Teachers from './pages/Teachers'
 import Suggestions from './pages/Suggestions'
+import Notices from './pages/Notices'
+import CalendarPage from './pages/CalendarPage'
 import Profile from './pages/Profile'
 import Terms from './pages/Terms'
 import TourModal from './components/TourModal'
@@ -29,6 +33,7 @@ function AppShell({ children }) {
 
   return (
     <div className="app-shell">
+      <OfflineBanner />
       <Navbar />
       <main className="app-main">{children}</main>
       <BottomNav />
@@ -70,6 +75,7 @@ function AppRoutes() {
       <Route path="/terms" element={<Terms />} />
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/onboarding" element={<OnboardingRoute><Onboarding /></OnboardingRoute>} />
       <Route path="/" element={<ProtectedRoute><AppShell><Dashboard /></AppShell></ProtectedRoute>} />
       <Route path="/students" element={<ProtectedRoute><AppShell><Students /></AppShell></ProtectedRoute>} />
@@ -80,6 +86,8 @@ function AppRoutes() {
       <Route path="/exams/:id" element={<ProtectedRoute><AppShell><ExamDetail /></AppShell></ProtectedRoute>} />
       <Route path="/teachers" element={<ProtectedRoute><HeadOnlyRoute><AppShell><Teachers /></AppShell></HeadOnlyRoute></ProtectedRoute>} />
       <Route path="/suggestions" element={<ProtectedRoute><OrgRoute><AppShell><Suggestions /></AppShell></OrgRoute></ProtectedRoute>} />
+      <Route path="/notices" element={<ProtectedRoute><AppShell><Notices /></AppShell></ProtectedRoute>} />
+      <Route path="/calendar" element={<ProtectedRoute><AppShell><CalendarPage /></AppShell></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute><AppShell><Profile /></AppShell></ProtectedRoute>} />
     </Routes>
   )

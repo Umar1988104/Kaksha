@@ -32,7 +32,7 @@ export default function ExamDetail() {
 
       try {
         const sSnap = await getDocs(query(collection(db, 'students'), where('orgId', '==', orgId), where('batch', '==', examData.batch)))
-        const studentList = sSnap.docs.map((d) => ({ id: d.id, ...d.data() }))
+        const studentList = sSnap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((s) => s.active !== false)
         studentList.sort((a, b) => a.name.localeCompare(b.name))
         setStudents(studentList)
       } catch (err) {
@@ -65,22 +65,21 @@ export default function ExamDetail() {
 
   async function saveAll() {
     setSaving(true)
-    await Promise.all(
-      students
-        .filter((s) => marks[s.id] !== undefined && marks[s.id] !== '')
-        .map((s) =>
-          setDoc(doc(db, 'examMarks', `${id}_${s.id}`), {
-            orgId,
-            examId: id,
-            studentId: s.id,
-            marksObtained: Number(marks[s.id]),
-            totalMarks: exam.totalMarks,
-            examName: exam.name,
-            subject: exam.subject,
-            date: exam.date
-          })
-        )
-    )
+    const writes = students
+      .filter((s) => marks[s.id] !== undefined && marks[s.id] !== '')
+      .map((s) =>
+        setDoc(doc(db, 'examMarks', `${id}_${s.id}`), {
+          orgId,
+          examId: id,
+          studentId: s.id,
+          marksObtained: Number(marks[s.id]),
+          totalMarks: exam.totalMarks,
+          examName: exam.name,
+          subject: exam.subject,
+          date: exam.date
+        })
+      )
+    if (navigator.onLine) await Promise.all(writes)
     setSaving(false)
   }
 

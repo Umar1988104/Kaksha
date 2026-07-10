@@ -4,7 +4,10 @@ import { addDoc, collection, deleteDoc, doc, getDocs, orderBy, query, updateDoc,
 import { db } from '../firebase'
 import StudentForm from '../components/StudentForm'
 import { useRole } from '../context/RoleContext'
-import { ChevronDown, ChevronRight, FolderOpen } from 'lucide-react'
+import { ChevronDown, ChevronRight, FolderOpen, RotateCcw, Trash2, UserMinus, Users } from 'lucide-react'
+import EmptyState from '../components/EmptyState'
+import { SkeletonList } from '../components/Skeleton'
+import ConfirmModal from '../components/ConfirmModal'
 
 export default function Students() {
   const { orgId, canEdit } = useRole()
@@ -14,6 +17,8 @@ export default function Students() {
   const [editing, setEditing] = useState(null)
   const [search, setSearch] = useState('')
   const [collapsed, setCollapsed] = useState({})
+  const [view, setView] = useState('active') // 'active' | 'left'
+  const [confirmAction, setConfirmAction] = useState(null) // { type: 'markLeft'|'delete', student }
 
   async function load() {
     setLoading(true)
@@ -35,13 +40,28 @@ export default function Students() {
     load()
   }
 
-  async function handleDelete(id) {
-    if (!confirm('Remove this student? This cannot be undone.')) return
-    await deleteDoc(doc(db, 'students', id))
+  async function markAsLeft(student) {
+    await updateDoc(doc(db, 'students', student.id), { active: false, leftDate: new Date().toISOString().slice(0, 10) })
+    setConfirmAction(null)
     load()
   }
 
-  const filtered = students.filter((s) =>
+  async function restoreStudent(student) {
+    await updateDoc(doc(db, 'students', student.id), { active: true, leftDate: null })
+    load()
+  }
+
+  async function deleteForever(student) {
+    await deleteDoc(doc(db, 'students', student.id))
+    setConfirmAction(null)
+    load()
+  }
+
+  const activeStudents = students.filter((s) => s.active !== false)
+  const leftStudents = students.filter((s) => s.active === false)
+  const pool = view === 'active' ? activeStudents : leftStudents
+
+  const filtered = pool.filter((s) =>
     (s.name + s.batch + s.subject).toLowerCase().includes(search.toLowerCase())
   )
 
@@ -64,9 +84,16 @@ export default function Students() {
       <div className="page__header page__header--row">
         <div>
           <h1>Students</h1>
-          <p className="page__sub">{students.length} total across {grouped.length} batch{grouped.length === 1 ? '' : 'es'}{!canEdit ? ' · view only' : ''}</p>
+          <p className="page__sub">{activeStudents.length} active{leftStudents.length > 0 ? ` · ${leftStudents.length} left` : ''}{!canEdit ? ' · view only' : ''}</p>
         </div>
-        {canEdit && <button className="btn btn--primary" onClick={() => { setEditing(null); setShowForm(true) }}>+ Add student</button>}
+        {canEdit && view === 'active' && <button className="btn btn--primary" onClick={() => { setEditing(null); setShowForm(true) }}>+ Add student</button>}
+      </div>
+
+      <div className="tab-row">
+        <button className={'tab' + (view === 'active' ? ' tab--active' : '')} onClick={() => setView('active')}>Active</button>
+        <button className={'tab' + (view === 'left' ? ' tab--active' : '')} onClick={() => setView('left')}>
+          Left {leftStudents.length > 0 ? `(${leftStudents.length})` : ''}
+        </button>
       </div>
 
       <input
@@ -77,9 +104,17 @@ export default function Students() {
       />
 
       {loading ? (
-        <div className="screen-loading">Loading students…</div>
+        <SkeletonList rows={4} />
       ) : filtered.length === 0 ? (
-        <div className="empty-state">No students yet{canEdit ? '. Add your first one to get started.' : '.'}</div>
+        <EmptyState
+          icon={view === 'active' ? Users : UserMinus}
+          title={view === 'active' ? 'No students yet' : 'No students have left'}
+          message={view === 'active'
+            ? (canEdit ? 'Add your first student to start tracking attendance, fees, and exams.' : 'Your center head hasn\'t added any students yet.')
+            : 'Students you mark as "left" show up here, and can be restored anytime.'}
+          actionLabel={view === 'active' && canEdit ? '+ Add student' : undefined}
+          onAction={view === 'active' && canEdit ? () => { setEditing(null); setShowForm(true) } : undefined}
+        />
       ) : (
         <div className="batch-list">
           {grouped.map(([batch, list]) => {
@@ -96,14 +131,33 @@ export default function Students() {
                   <div className="card-list batch-folder__body">
                     {list.map((s) => (
                       <div key={s.id} className="student-row">
-                        <Link to={`/students/${s.id}`} className="student-row__main">
-                          <div className="student-row__name">{s.name}</div>
-                          <div className="student-row__meta">{s.subject} · ₹{s.monthlyFee}/mo</div>
+                        <Link to={`/students/${s.id}`} className="student-row__main student-row__main--with-avatar">
+                          {s.photo ? <img src={s.photo} alt="" className="row-avatar" /> : <div className="row-avatar row-avatar--fallback">{s.name.charAt(0).toUpperCase()}</div>}
+                          <div>
+                            <div className="student-row__name">{s.name}</div>
+                            <div className="student-row__meta">
+                              {s.subject} · ₹{s.monthlyFee}/mo
+                              {view === 'left' && s.leftDate && ` · left ${new Date(s.leftDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}`}
+                            </div>
+                          </div>
                         </Link>
                         {canEdit && (
                           <div className="student-row__actions">
-                            <button className="btn btn--ghost btn--sm" onClick={() => { setEditing(s); setShowForm(true) }}>Edit</button>
-                            <button className="btn btn--ghost btn--sm btn--danger" onClick={() => handleDelete(s.id)}>Remove</button>
+                            {view === 'active' ? (
+                              <>
+                                <button className="btn btn--ghost btn--sm" onClick={() => { setEditing(s); setShowForm(true) }}>Edit</button>
+                                <button className="btn btn--ghost btn--sm btn--danger" onClick={() => setConfirmAction({ type: 'markLeft', student: s })}>Mark as left</button>
+                              </>
+                            ) : (
+                              <>
+                                <button className="btn btn--ghost btn--sm" onClick={() => restoreStudent(s)}>
+                                  <RotateCcw size={13} style={{ verticalAlign: '-2px', marginRight: 4 }} />Restore
+                                </button>
+                                <button className="btn btn--ghost btn--sm btn--danger" onClick={() => setConfirmAction({ type: 'delete', student: s })}>
+                                  <Trash2 size={13} style={{ verticalAlign: '-2px', marginRight: 4 }} />Delete forever
+                                </button>
+                              </>
+                            )}
                           </div>
                         )}
                       </div>
@@ -127,6 +181,25 @@ export default function Students() {
             />
           </div>
         </div>
+      )}
+
+      {confirmAction?.type === 'markLeft' && (
+        <ConfirmModal
+          title="Mark as left?"
+          message={`${confirmAction.student.name} will move to the "Left" list. Their attendance, fees, and exam history stay safe — you can restore them anytime.`}
+          confirmLabel="Mark as left"
+          onConfirm={() => markAsLeft(confirmAction.student)}
+          onCancel={() => setConfirmAction(null)}
+        />
+      )}
+      {confirmAction?.type === 'delete' && (
+        <ConfirmModal
+          title="Delete forever?"
+          message={`This permanently deletes ${confirmAction.student.name} and cannot be undone. Their attendance, fee, and exam records will remain but won't be linked to a visible student anymore. Consider keeping them in "Left" instead.`}
+          confirmLabel="Delete forever"
+          onConfirm={() => deleteForever(confirmAction.student)}
+          onCancel={() => setConfirmAction(null)}
+        />
       )}
     </div>
   )

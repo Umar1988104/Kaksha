@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Kaksha</string>
+    <string name="title_activity_main">Kaksha</string>
+    <string name="package_name">com.kaksha.tuition</string>
+    <string name="custom_url_scheme">com.kaksha.tuition</string>
+</resources>

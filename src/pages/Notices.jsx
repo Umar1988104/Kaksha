@@ -4,7 +4,8 @@ import { db } from '../firebase'
 import { useRole } from '../context/RoleContext'
 import EmptyState from '../components/EmptyState'
 import { SkeletonList } from '../components/Skeleton'
-import { Megaphone, Plus, Trash2 } from 'lucide-react'
+import { Megaphone, Plus, Send, Trash2 } from 'lucide-react'
+import { shareOrCopy } from '../utils/share'
 
 const emptyForm = { title: '', message: '', batch: 'all', eventDate: '' }
 
@@ -15,6 +16,7 @@ export default function Notices() {
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState(emptyForm)
+  const [copiedId, setCopiedId] = useState(null)
 
   async function load() {
     setLoading(true)
@@ -83,6 +85,18 @@ export default function Notices() {
                   {n.eventDate && ` · ${new Date(n.eventDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}`}
                 </div>
               </div>
+              {copiedId === n.id && <span className="copied-hint">Copied!</span>}
+              <button
+                className="whatsapp-icon-btn"
+                title="Share notice"
+                onClick={async () => {
+                  const text = `📢 ${n.title}\n\n${n.message}\n\n${n.batch === 'all' ? 'All batches' : n.batch}${n.eventDate ? ` · ${new Date(n.eventDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long' })}` : ''}`
+                  const result = await shareOrCopy(text)
+                  if (result === 'copied') { setCopiedId(n.id); setTimeout(() => setCopiedId(null), 2000) }
+                }}
+              >
+                <Send size={15} />
+              </button>
               {canEdit && <button className="notice-card__delete" onClick={() => handleDelete(n.id)}><Trash2 size={14} /></button>}
             </div>
           ))}

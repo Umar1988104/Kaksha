@@ -4,10 +4,11 @@ import { addDoc, collection, deleteDoc, doc, getDocs, orderBy, query, updateDoc,
 import { db } from '../firebase'
 import StudentForm from '../components/StudentForm'
 import { useRole } from '../context/RoleContext'
-import { ChevronDown, ChevronRight, FolderOpen, RotateCcw, Trash2, UserMinus, Users } from 'lucide-react'
+import { ChevronDown, ChevronRight, FolderOpen, MessageCircle, RotateCcw, Trash2, UserMinus, Users } from 'lucide-react'
 import EmptyState from '../components/EmptyState'
 import { SkeletonList } from '../components/Skeleton'
 import ConfirmModal from '../components/ConfirmModal'
+import { buildWhatsAppChatLink } from '../utils/whatsapp'
 
 export default function Students() {
   const { orgId, canEdit } = useRole()
@@ -141,9 +142,20 @@ export default function Students() {
                             </div>
                           </div>
                         </Link>
-                        {canEdit && (
-                          <div className="student-row__actions">
-                            {view === 'active' ? (
+                        <div className="student-row__actions">
+                          {s.parentPhone && (
+                            <a
+                              className="whatsapp-icon-btn"
+                              href={buildWhatsAppChatLink(s.parentPhone)}
+                              target="_blank" rel="noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              title="Message parent on WhatsApp"
+                            >
+                              <MessageCircle size={17} />
+                            </a>
+                          )}
+                          {canEdit && (
+                            view === 'active' ? (
                               <>
                                 <button className="btn btn--ghost btn--sm" onClick={() => { setEditing(s); setShowForm(true) }}>Edit</button>
                                 <button className="btn btn--ghost btn--sm btn--danger" onClick={() => setConfirmAction({ type: 'markLeft', student: s })}>Mark as left</button>
@@ -157,9 +169,9 @@ export default function Students() {
                                   <Trash2 size={13} style={{ verticalAlign: '-2px', marginRight: 4 }} />Delete forever
                                 </button>
                               </>
-                            )}
-                          </div>
-                        )}
+                            )
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>

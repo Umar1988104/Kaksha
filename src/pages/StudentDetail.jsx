@@ -4,8 +4,9 @@ import { collection, doc, getDoc, getDocs, query, where } from 'firebase/firesto
 import { db } from '../firebase'
 import { useRole } from '../context/RoleContext'
 import StatusStamp from '../components/StatusStamp'
-import { buildFeeReminderLink } from '../utils/whatsapp'
+import { buildFeeReminderLink, buildWhatsAppChatLink } from '../utils/whatsapp'
 import { lastNMonthKeys, monthLabel } from '../utils/dates'
+import { MessageCircle } from 'lucide-react'
 
 export default function StudentDetail() {
   const { id } = useParams()
@@ -74,10 +75,20 @@ export default function StudentDetail() {
       <Link to="/students" className="back-link">← Back to students</Link>
       <div className="page__header student-detail-header">
         {student.photo ? <img src={student.photo} alt="" className="student-detail-header__avatar" /> : <div className="student-detail-header__avatar student-detail-header__avatar--fallback">{student.name.charAt(0).toUpperCase()}</div>}
-        <div>
+        <div style={{ flex: 1 }}>
           <h1>{student.name}</h1>
           <p className="page__sub">{student.batch} · {student.subject} · ₹{student.monthlyFee}/mo</p>
         </div>
+        {student.parentPhone && (
+          <a
+            className="whatsapp-icon-btn"
+            href={buildWhatsAppChatLink(student.parentPhone)}
+            target="_blank" rel="noreferrer"
+            title="Message parent on WhatsApp"
+          >
+            <MessageCircle size={20} />
+          </a>
+        )}
       </div>
 
       <div className="detail-grid">

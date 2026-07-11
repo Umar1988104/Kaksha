@@ -47,7 +47,7 @@ a { color: inherit; text-decoration: none; }
   gap: 20px;
   background: var(--indigo);
   color: var(--white);
-  padding: 14px 24px;
+  padding: calc(14px + env(safe-area-inset-top)) 24px 14px;
   position: sticky;
   top: 0;
   z-index: 10;
@@ -77,7 +77,7 @@ a { color: inherit; text-decoration: none; }
 }
 .navbar__link:hover { background: rgba(255,255,255,0.08); color: var(--white); }
 .navbar__link--active { background: rgba(255,255,255,0.14); color: var(--white); font-weight: 600; }
-.navbar__right { display: flex; align-items: center; gap: 8px; }
+.navbar__right { display: flex; align-items: center; gap: 8px; margin-left: auto; }
 .navbar__icon-link {
   width: 34px; height: 34px; border-radius: 8px;
   display: flex; align-items: center; justify-content: center;
@@ -122,6 +122,11 @@ a { color: inherit; text-decoration: none; }
 .btn--sm { padding: 6px 10px; font-size: 13px; }
 .btn--whatsapp { background: #25D366; color: #06331B; }
 .btn--whatsapp:hover { opacity: 0.9; }
+.whatsapp-icon-btn {
+  width: 34px; height: 34px; border-radius: 50%; background: #25D366; color: #06331B;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.whatsapp-icon-btn:hover { opacity: 0.88; }
 .btn--danger-solid { background: var(--red); color: var(--white); }
 .btn--danger-solid:hover { opacity: 0.9; }
 .btn:disabled { opacity: 0.6; cursor: default; }
@@ -164,6 +169,9 @@ a { color: inherit; text-decoration: none; }
 }
 .form-error { color: var(--red); font-size: 13px; }
 .login-form__forgot { align-self: flex-end; font-size: 12.5px; color: var(--indigo); font-weight: 600; margin-top: -8px; }
+.login-form__checkbox { flex-direction: row !important; align-items: flex-start; gap: 8px !important; font-weight: 400 !important; font-size: 13px !important; color: #444C5C; }
+.login-form__checkbox input { margin-top: 2px; }
+.login-form__checkbox a { color: var(--indigo); font-weight: 600; }
 
 .screen-loading { padding: 60px 0; text-align: center; color: #5B6474; }
 .empty-state { padding: 40px 20px; text-align: center; color: #5B6474; background: var(--white); border-radius: var(--radius); border: 1px dashed var(--paper-line); }
@@ -391,17 +399,19 @@ a { color: inherit; text-decoration: none; }
 
 /* Exams */
 .exam-row {
-  display: flex; align-items: center; gap: 12px;
+  display: flex; align-items: center; gap: 10px;
   background: var(--white); border: 1px solid var(--paper-line); border-radius: var(--radius);
   padding: 14px 16px; transition: box-shadow 0.15s, border-color 0.15s;
 }
 .exam-row:hover { box-shadow: 0 2px 8px rgba(28,31,42,0.07); border-color: #D4D9E2; }
+.exam-row__link { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; }
 .exam-row__icon {
   width: 38px; height: 38px; border-radius: 9px; background: var(--paper); color: var(--amber-deep);
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
-.exam-row__main { flex: 1; }
+.exam-row__main { flex: 1; min-width: 0; }
 .exam-row__progress { font-family: var(--font-mono); font-size: 13px; color: #5B6474; white-space: nowrap; }
+.copied-hint { font-size: 12px; color: var(--green); font-weight: 600; white-space: nowrap; }
 
 .mark-row {
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
@@ -458,6 +468,8 @@ a { color: inherit; text-decoration: none; }
 .tour-modal__dots { display: flex; gap: 6px; justify-content: center; margin-bottom: 18px; }
 .tour-modal__dot { width: 6px; height: 6px; border-radius: 50%; background: var(--paper-line); }
 .tour-modal__dot--active { background: var(--indigo); width: 16px; border-radius: 4px; }
+.whats-new-list { text-align: left; margin: 4px 0 20px; padding-left: 20px; display: flex; flex-direction: column; gap: 10px; }
+.whats-new-list li { font-size: 14px; color: #444C5C; line-height: 1.5; }
 
 /* Bottom navigation (mobile) — hidden on desktop by default */
 .bottom-nav {
@@ -552,6 +564,9 @@ a { color: inherit; text-decoration: none; }
   background: var(--amber-deep); color: var(--white); font-size: 12.5px; font-weight: 600;
   padding: 8px 16px; display: flex; align-items: center; gap: 8px; text-align: center; justify-content: center;
 }
+.danger-zone { margin-top: 28px; padding-top: 18px; border-top: 1px solid var(--paper-line); }
+.danger-zone__title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--red); margin-bottom: 6px; }
+.danger-zone__hint { font-size: 12.5px; color: #8891A0; margin-bottom: 10px; max-width: 420px; }
 
 /* Photo uploader */
 .photo-uploader { display: flex; flex-direction: column; align-items: center; gap: 8px; }

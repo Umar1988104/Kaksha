@@ -7,6 +7,7 @@ export default function Signup() {
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [agreed, setAgreed] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -15,6 +16,10 @@ export default function Signup() {
     setError('')
     if (password.length < 6) {
       setError('Password should be at least 6 characters.')
+      return
+    }
+    if (!agreed) {
+      setError('Please agree to the Terms & Conditions to continue.')
       return
     }
     setLoading(true)
@@ -49,17 +54,18 @@ export default function Signup() {
             Password
             <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} />
           </label>
+          <label className="login-form__checkbox">
+            <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} />
+            <span>I agree to the <Link to="/terms" target="_blank">Terms & Conditions</Link></span>
+          </label>
           {error && <div className="form-error">{error}</div>}
-          <button className="btn btn--primary" type="submit" disabled={loading}>
+          <button className="btn btn--primary" type="submit" disabled={loading || !agreed}>
             {loading ? 'Creating account…' : 'Create account'}
           </button>
         </form>
 
         <p className="login-card__footer">
           Already have an account? <Link to="/login">Log in</Link>
-        </p>
-        <p className="login-card__legal">
-          By continuing you agree to our <Link to="/terms">Terms & Conditions</Link>
         </p>
       </div>
     </div>

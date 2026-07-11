@@ -3,21 +3,26 @@ import { doc, setDoc } from 'firebase/firestore'
 import { db } from '../firebase'
 import { useAuth } from '../context/AuthContext'
 import { useRole } from '../context/RoleContext'
+import { CURRENT_VERSION } from '../changelog'
 import {
-  CalendarCheck, ClipboardList, IndianRupee, LayoutDashboard,
-  MessageSquareText, Sparkles, UserCog, Users, X
+  Bell, CalendarCheck, CalendarDays, ClipboardList, IndianRupee, LayoutDashboard,
+  Megaphone, MessageSquareText, Search, Sparkles, UserCog, Users, X
 } from 'lucide-react'
 
 const BASE_STEPS = [
-  { icon: LayoutDashboard, title: 'Dashboard', body: "Your center's at-a-glance view — students, fees collected and pending, and today's attendance." },
-  { icon: Users, title: 'Students', body: 'Add students and they group automatically into batch folders. Tap any student to see their full profile — attendance %, exam average, and fee history.' },
-  { icon: CalendarCheck, title: 'Attendance', body: 'Pick a date and batch, mark present/absent for each student, and save. You can revisit and edit any past date.' },
+  { icon: LayoutDashboard, title: 'Dashboard', body: "Your center's at-a-glance view — students, fees collected and pending, today's attendance, and quick shortcuts to the things you do most." },
+  { icon: Users, title: 'Students', body: 'Add students (with a photo!) and they group automatically into batch folders. Tap any student for their full profile — attendance %, exam average, and fee history. Student leaving? "Mark as left" keeps their history safe instead of deleting it.' },
+  { icon: CalendarCheck, title: 'Attendance', body: 'Pick a date and batch, mark present/absent, and save — works even with no signal, it\u2019ll sync once you\u2019re back online. After marking, you can share the absentee list straight to WhatsApp in one tap.' },
   { icon: IndianRupee, title: 'Fees', body: 'See who\u2019s paid and who\u2019s due each month. One tap opens WhatsApp with a reminder message ready to send to the parent.' },
-  { icon: ClipboardList, title: 'Exams', body: 'Create an exam once (name, subject, batch, total marks), then enter every student\u2019s marks in one place. Marks automatically build each student\u2019s report card.' }
+  { icon: ClipboardList, title: 'Exams', body: 'Create an exam once (name, subject, batch, total marks), then enter every student\u2019s marks in one place. Marks automatically build each student\u2019s report card.' },
+  { icon: Megaphone, title: 'Notices', body: 'Post homework, holidays, or announcements — optionally pinned to a date so they also show up on the Calendar.' },
+  { icon: CalendarDays, title: 'Calendar', body: 'See every exam and dated notice on one month view — tap any day to see what\u2019s scheduled.' },
+  { icon: Search, title: 'Search', body: 'The search icon at the top finds any student or exam instantly by name, batch, or subject.' },
+  { icon: Bell, title: 'Notifications', body: 'The bell icon keeps you posted — suggestions from teachers, resolutions from your head, and new teachers joining, all in real time.' }
 ]
 
 const HEAD_STEPS = [
-  { icon: UserCog, title: 'Teachers', body: 'Manage every teacher who joins your organization — set their salary, assigned batches, and timings, and mark salary paid each month.' },
+  { icon: UserCog, title: 'Teachers', body: 'Manage every teacher who joins your organization — set their salary, assigned batches, and timings, and mark salary paid each month. Your join code lives here too, ready to share.' },
   { icon: MessageSquareText, title: 'Suggestions', body: 'Teachers can send you notes and update requests here. Mark them resolved once handled.' }
 ]
 
@@ -41,7 +46,7 @@ export default function TourModal({ onClose }) {
 
   async function finish() {
     try {
-      await setDoc(doc(db, 'users', user.uid), { hasSeenTour: true }, { merge: true })
+      await setDoc(doc(db, 'users', user.uid), { hasSeenTour: true, lastSeenVersion: CURRENT_VERSION }, { merge: true })
       await refreshProfile()
     } catch (e) {
       // non-critical — worst case the tour shows again next time

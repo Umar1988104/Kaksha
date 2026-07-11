@@ -6,6 +6,7 @@ import ProtectedRoute from './components/ProtectedRoute'
 import Navbar from './components/Navbar'
 import BottomNav from './components/BottomNav'
 import OfflineBanner from './components/OfflineBanner'
+import BackButtonHandler from './components/BackButtonHandler'
 import Splash from './components/Splash'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
@@ -25,19 +26,29 @@ import CalendarPage from './pages/CalendarPage'
 import Profile from './pages/Profile'
 import Terms from './pages/Terms'
 import TourModal from './components/TourModal'
+import WhatsNewModal from './components/WhatsNewModal'
+import { CURRENT_VERSION } from './changelog'
 
 function AppShell({ children }) {
   const { profile } = useRole()
   const [dismissed, setDismissed] = useState(false)
+  const [whatsNewDismissed, setWhatsNewDismissed] = useState(false)
   const showTour = profile && !profile.hasSeenTour && !dismissed
+  // Only show "What's New" once the tour is out of the way, and only if
+  // they haven't already seen this version (brand-new users get the full
+  // tour instead, which already covers everything current).
+  const showWhatsNew = profile && profile.hasSeenTour && !showTour
+    && profile.lastSeenVersion !== CURRENT_VERSION && !whatsNewDismissed
 
   return (
     <div className="app-shell">
+      <BackButtonHandler />
       <OfflineBanner />
       <Navbar />
       <main className="app-main">{children}</main>
       <BottomNav />
       {showTour && <TourModal onClose={() => setDismissed(true)} />}
+      {showWhatsNew && <WhatsNewModal onClose={() => setWhatsNewDismissed(true)} />}
     </div>
   )
 }

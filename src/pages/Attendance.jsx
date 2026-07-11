@@ -3,6 +3,7 @@ import { collection, doc, getDocs, orderBy, query, setDoc, where } from 'firebas
 import { db } from '../firebase'
 import { useRole } from '../context/RoleContext'
 import { todayISO } from '../utils/dates'
+import { shareOrCopy } from '../utils/share'
 import { Send } from 'lucide-react'
 
 export default function Attendance() {
@@ -80,12 +81,8 @@ export default function Attendance() {
     const names = absentStudents.map((s) => `- ${s.name} (${s.batch})`).join('\n')
     const text = `Absentee list — ${dateLabel}\n${batchLabel}\n\n${names}`
 
-    if (navigator.share) {
-      try {
-        await navigator.share({ text })
-      } catch (err) { /* user cancelled the share sheet — not an error */ }
-    } else {
-      await navigator.clipboard.writeText(text)
+    const result = await shareOrCopy(text)
+    if (result === 'copied') {
       setShareCopied(true)
       setTimeout(() => setShareCopied(false), 2000)
     }

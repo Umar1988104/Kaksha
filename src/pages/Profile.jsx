@@ -6,8 +6,9 @@ import { useRole } from '../context/RoleContext'
 import { sendNotification } from '../utils/notifications'
 import ConfirmModal from '../components/ConfirmModal'
 import PhotoUploader from '../components/PhotoUploader'
+import DeleteAccountModal from '../components/DeleteAccountModal'
 import {
-  Building2, Check, Copy, HelpCircle, Info, LogOut, Mail, Pencil, User, Users
+  Building2, Check, Copy, HelpCircle, Info, LogOut, Mail, Pencil, Trash2, User, Users
 } from 'lucide-react'
 
 const FIELD_LABELS = {
@@ -18,7 +19,7 @@ const FIELD_LABELS = {
 }
 
 export default function Profile() {
-  const { user, logout } = useAuth()
+  const { user, logout, deleteAccount } = useAuth()
   const { profile, isHead, isOrgTeacher, mode, orgId, refreshProfile } = useRole()
 
   const [form, setForm] = useState({ name: '', phone: '', address: '', gender: '', dob: '', centerName: '', photo: null })
@@ -28,6 +29,7 @@ export default function Profile() {
   const [orgCode, setOrgCode] = useState('')
   const [copied, setCopied] = useState(false)
   const [section, setSection] = useState('profile')
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
 
   const [joinCodeInput, setJoinCodeInput] = useState('')
   const [switching, setSwitching] = useState(false)
@@ -278,6 +280,16 @@ export default function Profile() {
         <LogOut size={15} style={{ verticalAlign: '-3px', marginRight: 6 }} />Log out
       </button>
 
+      <div className="danger-zone">
+        <div className="danger-zone__title">Danger zone</div>
+        <p className="danger-zone__hint">
+          Permanently delete your account and login. {isHead ? "Your organization's data isn't deleted with it — talk to us first if you're the only head." : "This doesn't affect your organization's shared data."}
+        </p>
+        <button className="btn btn--ghost btn--danger" onClick={() => setShowDeleteModal(true)}>
+          <Trash2 size={14} style={{ verticalAlign: '-2px', marginRight: 6 }} />Delete account
+        </button>
+      </div>
+
       {confirmingLogout && (
         <ConfirmModal
           title="Log out?"
@@ -285,6 +297,13 @@ export default function Profile() {
           confirmLabel="Log out"
           onConfirm={logout}
           onCancel={() => setConfirmingLogout(false)}
+        />
+      )}
+
+      {showDeleteModal && (
+        <DeleteAccountModal
+          onConfirm={deleteAccount}
+          onCancel={() => setShowDeleteModal(false)}
         />
       )}
     </div>

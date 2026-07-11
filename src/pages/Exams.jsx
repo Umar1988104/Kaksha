@@ -3,9 +3,10 @@ import { Link } from 'react-router-dom'
 import { addDoc, collection, getDocs, orderBy, query, where } from 'firebase/firestore'
 import { db } from '../firebase'
 import { useRole } from '../context/RoleContext'
-import { ClipboardList, Plus } from 'lucide-react'
+import { ClipboardList, Plus, Send } from 'lucide-react'
 import EmptyState from '../components/EmptyState'
 import { SkeletonList } from '../components/Skeleton'
+import { shareOrCopy } from '../utils/share'
 
 const emptyForm = { name: '', subject: '', batch: '', date: new Date().toISOString().slice(0, 10), totalMarks: '' }
 
@@ -17,6 +18,7 @@ export default function Exams() {
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState(emptyForm)
+  const [copiedId, setCopiedId] = useState(null)
 
   async function load() {
     setLoading(true)
@@ -90,14 +92,29 @@ export default function Exams() {
             const entered = marksByExam[ex.id] || 0
             const total = batchSize(ex.batch)
             return (
-              <Link key={ex.id} to={`/exams/${ex.id}`} className="exam-row">
-                <div className="exam-row__icon"><ClipboardList size={18} /></div>
-                <div className="exam-row__main">
-                  <div className="student-row__name">{ex.name}</div>
-                  <div className="student-row__meta">{ex.subject} · {ex.batch} · {new Date(ex.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })} · out of {ex.totalMarks}</div>
-                </div>
-                <div className="exam-row__progress">{entered}/{total} marked</div>
-              </Link>
+              <div key={ex.id} className="exam-row">
+                <Link to={`/exams/${ex.id}`} className="exam-row__link">
+                  <div className="exam-row__icon"><ClipboardList size={18} /></div>
+                  <div className="exam-row__main">
+                    <div className="student-row__name">{ex.name}</div>
+                    <div className="student-row__meta">{ex.subject} · {ex.batch} · {new Date(ex.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })} · out of {ex.totalMarks}</div>
+                  </div>
+                  <div className="exam-row__progress">{entered}/{total} marked</div>
+                </Link>
+                {copiedId === ex.id && <span className="copied-hint">Copied!</span>}
+                <button
+                  className="whatsapp-icon-btn"
+                  title="Share exam notification"
+                  onClick={async (e) => {
+                    e.preventDefault()
+                    const text = `📋 New exam scheduled\n\n${ex.name} (${ex.subject})\nBatch: ${ex.batch}\nDate: ${new Date(ex.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}\nTotal marks: ${ex.totalMarks}`
+                    const result = await shareOrCopy(text)
+                    if (result === 'copied') { setCopiedId(ex.id); setTimeout(() => setCopiedId(null), 2000) }
+                  }}
+                >
+                  <Send size={15} />
+                </button>
+              </div>
             )
           })}
         </div>

@@ -2,10 +2,21 @@
 // This does NOT require the paid WhatsApp Business API — it just opens
 // the chat with the text ready, and the admin taps send themselves.
 
-export function buildFeeReminderLink({ parentPhone, studentName, monthLabel, dueAmount, centerName }) {
-  const digitsOnly = (parentPhone || '').replace(/\D/g, '')
+function normalizePhone(rawPhone) {
+  const digitsOnly = (rawPhone || '').replace(/\D/g, '')
   // Assume Indian numbers if no country code was entered (10 digits)
-  const phone = digitsOnly.length === 10 ? `91${digitsOnly}` : digitsOnly
+  return digitsOnly.length === 10 ? `91${digitsOnly}` : digitsOnly
+}
+
+// Opens a direct WhatsApp chat with someone — no pre-filled message, just
+// gets you into the conversation (used for the WhatsApp icon on student
+// and teacher profiles).
+export function buildWhatsAppChatLink(phone) {
+  return `https://wa.me/${normalizePhone(phone)}`
+}
+
+export function buildFeeReminderLink({ parentPhone, studentName, monthLabel, dueAmount, centerName }) {
+  const phone = normalizePhone(parentPhone)
 
   const message =
     `Hello, this is a fee reminder from ${centerName || 'the coaching center'}.\n` +

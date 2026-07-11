@@ -4,7 +4,8 @@ import { db } from '../firebase'
 import { useRole } from '../context/RoleContext'
 import { currentMonthKey, lastNMonthKeys, monthLabel } from '../utils/dates'
 import StatusStamp from '../components/StatusStamp'
-import { Copy, Check } from 'lucide-react'
+import { Copy, Check, MessageCircle } from 'lucide-react'
+import { buildWhatsAppChatLink } from '../utils/whatsapp'
 
 export default function Teachers() {
   const { orgId, profile } = useRole()
@@ -133,7 +134,19 @@ export default function Teachers() {
                       <div className="student-row__name">{t.name}</div>
                       <div className="student-row__meta">{t.email}</div>
                     </div>
-                    <StatusStamp status={isPaid ? 'paid' : 'due'} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      {t.phone && (
+                        <a
+                          className="whatsapp-icon-btn"
+                          href={buildWhatsAppChatLink(t.phone)}
+                          target="_blank" rel="noreferrer"
+                          title="Message on WhatsApp"
+                        >
+                          <MessageCircle size={17} />
+                        </a>
+                      )}
+                      <StatusStamp status={isPaid ? 'paid' : 'due'} />
+                    </div>
                   </div>
 
                   {isEditing ? (

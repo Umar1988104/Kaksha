@@ -2,14 +2,14 @@ import { useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useRole } from '../context/RoleContext'
-import { CalendarCheck, CalendarDays, ClipboardList, IndianRupee, LayoutDashboard, LogOut, Megaphone, MessageSquareText, Search, User, UserCog, Users } from 'lucide-react'
+import { CalendarCheck, CalendarDays, ClipboardList, IndianRupee, LayoutDashboard, LogOut, Megaphone, MessageSquareText, Search, User, UserCog, Users, Wallet } from 'lucide-react'
 import ConfirmModal from './ConfirmModal'
 import NotificationBell from './NotificationBell'
 import GlobalSearch from './GlobalSearch'
 
 export default function Navbar() {
   const { logout } = useAuth()
-  const { isHead, isOrgTeacher } = useRole()
+  const { isHead, isOrgTeacher, canEdit } = useRole()
   const [confirmingLogout, setConfirmingLogout] = useState(false)
   const [showSearch, setShowSearch] = useState(false)
 
@@ -29,6 +29,7 @@ export default function Navbar() {
   }
   links.push({ to: '/notices', label: 'Notices', icon: Megaphone })
   links.push({ to: '/calendar', label: 'Calendar', icon: CalendarDays })
+  if (canEdit) links.push({ to: '/expenses', label: 'Expenses', icon: Wallet })
   links.push({ to: '/profile', label: 'Profile', icon: User })
 
   return (

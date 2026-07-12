@@ -88,6 +88,15 @@ service cloud.firestore {
       allow update, delete: if signedIn() && inMyOrg(resource.data) && canEdit();
     }
 
+    // Expenses/income ledger — financial data, so restricted to whoever
+    // fully owns the org's money (head or a solo teacher). canEdit()
+    // already excludes org teachers, so this alone is sufficient.
+    match /transactions/{docId} {
+      allow read: if signedIn() && inMyOrg(resource.data) && canEdit();
+      allow create: if signedIn() && inMyOrg(request.resource.data) && canEdit();
+      allow update, delete: if signedIn() && inMyOrg(resource.data) && canEdit();
+    }
+
     // Notifications — anyone in the org can create one aimed at a teammate
     // (e.g. a teacher notifying the head), but you can only read/update
     // (mark read) notifications addressed to you.

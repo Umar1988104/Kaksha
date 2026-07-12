@@ -3,9 +3,17 @@
 // against each user's last-seen version (stored on their profile) — nothing
 // else needs to change, and it costs nothing if you skip a release.
 
-export const CURRENT_VERSION = '1.1.0'
+export const CURRENT_VERSION = '1.2.0'
 
 export const CHANGELOG = [
+  {
+    version: '1.2.0',
+    date: '2026-07-12',
+    title: "What's new",
+    items: [
+      'New Expenses section — automatically tracks fee income and teacher salaries, plus lets you log rent, repairs, and other income/expenses. Shows your net profit or loss at a glance.'
+    ]
+  },
   {
     version: '1.1.0',
     date: '2026-07-11',

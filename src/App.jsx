@@ -23,6 +23,7 @@ import Teachers from './pages/Teachers'
 import Suggestions from './pages/Suggestions'
 import Notices from './pages/Notices'
 import CalendarPage from './pages/CalendarPage'
+import Expenses from './pages/Expenses'
 import Profile from './pages/Profile'
 import Terms from './pages/Terms'
 import TourModal from './components/TourModal'
@@ -80,6 +81,15 @@ function OrgRoute({ children }) {
   return children
 }
 
+// Expenses is financial data — visible to whoever fully owns the org's
+// money (head or a solo teacher), never to an org teacher.
+function FinanceRoute({ children }) {
+  const { canEdit, isOrgTeacher, loading } = useRole()
+  if (loading) return <div className="screen-loading">Loading…</div>
+  if (!canEdit || isOrgTeacher) return <Navigate to="/" replace />
+  return children
+}
+
 function AppRoutes() {
   return (
     <Routes>
@@ -99,6 +109,7 @@ function AppRoutes() {
       <Route path="/suggestions" element={<ProtectedRoute><OrgRoute><AppShell><Suggestions /></AppShell></OrgRoute></ProtectedRoute>} />
       <Route path="/notices" element={<ProtectedRoute><AppShell><Notices /></AppShell></ProtectedRoute>} />
       <Route path="/calendar" element={<ProtectedRoute><AppShell><CalendarPage /></AppShell></ProtectedRoute>} />
+      <Route path="/expenses" element={<ProtectedRoute><FinanceRoute><AppShell><Expenses /></AppShell></FinanceRoute></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute><AppShell><Profile /></AppShell></ProtectedRoute>} />
     </Routes>
   )

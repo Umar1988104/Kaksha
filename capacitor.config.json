@@ -1,5 +1,9 @@
 {
   "appId": "com.kaksha.tuition",
   "appName": "Kaksha",
-  "webDir": "dist"
+  "webDir": "dist",
+  "server": {
+    "url": "https://kaksha-tution.netlify.app",
+    "androidScheme": "https"
+  }
 }

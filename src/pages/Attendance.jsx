@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
-import { collection, doc, getDocs, orderBy, query, setDoc, where } from 'firebase/firestore'
+import { collection, doc, getDoc, getDocs, orderBy, query, setDoc, where } from 'firebase/firestore'
 import { db } from '../firebase'
 import { useRole } from '../context/RoleContext'
 import { todayISO } from '../utils/dates'
 import { shareOrCopy } from '../utils/share'
-import { Send } from 'lucide-react'
+import { buildAbsentNoticeLink } from '../utils/whatsapp'
+import { MessageCircle, Send } from 'lucide-react'
 
 export default function Attendance() {
-  const { orgId, canEdit } = useRole()
+  const { orgId, canMarkAttendance, profile } = useRole()
   const [students, setStudents] = useState([])
   const [date, setDate] = useState(todayISO())
   const [batch, setBatch] = useState('all')
@@ -15,16 +16,25 @@ export default function Attendance() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [shareCopied, setShareCopied] = useState(false)
+  const [centerName, setCenterName] = useState('')
 
   useEffect(() => {
     if (!orgId) return
     async function load() {
       const snap = await getDocs(query(collection(db, 'students'), where('orgId', '==', orgId), orderBy('name')))
       setStudents(snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((s) => s.active !== false))
+
+      if (profile?.mode === 'org' && profile?.orgId) {
+        const orgSnap = await getDoc(doc(db, 'organizations', profile.orgId))
+        if (orgSnap.exists()) setCenterName(orgSnap.data().name || '')
+      } else {
+        setCenterName(profile?.centerName || '')
+      }
+
       setLoading(false)
     }
     load()
-  }, [orgId])
+  }, [orgId, profile])
 
   useEffect(() => {
     if (!orgId || !date) return
@@ -44,9 +54,10 @@ export default function Attendance() {
 
   const visibleStudents = batch === 'all' ? students : students.filter((s) => s.batch === batch)
   const absentStudents = visibleStudents.filter((s) => marks[s.id] === 'absent')
+  const dateLabel = new Date(date).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })
 
   function toggle(studentId, status) {
-    if (!canEdit) return
+    if (!canMarkAttendance) return
     setMarks((m) => ({ ...m, [studentId]: status }))
   }
 
@@ -76,7 +87,6 @@ export default function Attendance() {
   }
 
   async function shareAbsentList() {
-    const dateLabel = new Date(date).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })
     const batchLabel = batch === 'all' ? 'All batches' : batch
     const names = absentStudents.map((s) => `- ${s.name} (${s.batch})`).join('\n')
     const text = `Absentee list — ${dateLabel}\n${batchLabel}\n\n${names}`
@@ -95,9 +105,9 @@ export default function Attendance() {
       <div className="page__header page__header--row">
         <div>
           <h1>Attendance</h1>
-          <p className="page__sub">{canEdit ? 'Mark present/absent, then save' : 'View only'}</p>
+          <p className="page__sub">{canMarkAttendance ? 'Mark present/absent, then save' : 'View only'}</p>
         </div>
-        {canEdit && (
+        {canMarkAttendance && (
           <button className="btn btn--primary" onClick={saveAll} disabled={saving}>
             {saving ? 'Saving…' : 'Save attendance'}
           </button>
@@ -135,13 +145,24 @@ export default function Attendance() {
               <button
                 className={'chip chip--present' + (marks[s.id] === 'present' ? ' chip--active' : '')}
                 onClick={() => toggle(s.id, 'present')}
-                disabled={!canEdit}
+                disabled={!canMarkAttendance}
               >Present</button>
               <button
                 className={'chip chip--absent' + (marks[s.id] === 'absent' ? ' chip--active' : '')}
                 onClick={() => toggle(s.id, 'absent')}
-                disabled={!canEdit}
+                disabled={!canMarkAttendance}
               >Absent</button>
+              {marks[s.id] === 'absent' && s.parentPhone && (
+                <a
+                  className="whatsapp-icon-btn"
+                  href={buildAbsentNoticeLink({ parentPhone: s.parentPhone, studentName: s.name, dateLabel, centerName })}
+                  target="_blank" rel="noreferrer"
+                  title="Notify parent on WhatsApp"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <MessageCircle size={16} />
+                </a>
+              )}
             </div>
           </div>
         ))}

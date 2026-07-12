@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { collection, getDocs, query, where } from 'firebase/firestore'
+import { collection, doc, getDocs, limit, query, setDoc, where } from 'firebase/firestore'
 import { db } from '../firebase'
+import { useAuth } from '../context/AuthContext'
 import { useRole } from '../context/RoleContext'
 import { currentMonthKey, todayISO } from '../utils/dates'
 import {
@@ -9,12 +10,16 @@ import {
   UserPlus, MessageSquareText
 } from 'lucide-react'
 import { SkeletonStatGrid } from '../components/Skeleton'
+import GettingStartedChecklist from '../components/GettingStartedChecklist'
 
 export default function Dashboard() {
-  const { orgId, isOrgTeacher, canEdit, profile } = useRole()
+  const { user } = useAuth()
+  const { orgId, isOrgTeacher, canEdit, isHead, profile, refreshProfile } = useRole()
   const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState({ totalStudents: 0, collectedToday: 0, attendancePct: null, examCount: 0 })
   const [activity, setActivity] = useState([])
+  const [checklist, setChecklist] = useState(null)
+  const [checklistDismissed, setChecklistDismissed] = useState(false)
 
   useEffect(() => {
     if (!orgId) return
@@ -39,6 +44,28 @@ export default function Dashboard() {
       const upcomingExams = exams.filter((e) => e.date >= today).length
 
       setStats({ totalStudents: students.length, collectedToday, attendancePct, examCount: upcomingExams })
+
+      // Getting-started checklist — only bother checking "any attendance
+      // marked ever" and "any teacher joined" if we don't already know the
+      // answer from data fetched above.
+      if (canEdit && !profile?.dismissedChecklist) {
+        const anyAttendanceSnap = attDocs.length > 0
+          ? { size: 1 }
+          : await getDocs(query(collection(db, 'attendance'), where('orgId', '==', orgId), limit(1)))
+
+        const items = [
+          { label: 'Add your first student', done: students.length > 0, link: '/students' },
+          { label: 'Mark attendance for a batch', done: anyAttendanceSnap.size > 0, link: '/attendance' },
+          { label: 'Create your first exam', done: exams.length > 0, link: '/exams' }
+        ]
+
+        if (isHead) {
+          const anyTeacherSnap = await getDocs(query(collection(db, 'users'), where('orgId', '==', orgId), where('role', '==', 'teacher'), limit(1)))
+          items.push({ label: 'Invite a teacher with your join code', done: anyTeacherSnap.size > 0, link: '/teachers' })
+        }
+
+        setChecklist(items)
+      }
 
       // Recent activity — built from real records (paid fees, today's
       // attendance, newest exam), not placeholder data.
@@ -65,6 +92,14 @@ export default function Dashboard() {
     }
     load()
   }, [orgId])
+
+  async function dismissChecklist() {
+    setChecklistDismissed(true)
+    try {
+      await setDoc(doc(db, 'users', user.uid), { dismissedChecklist: true }, { merge: true })
+      await refreshProfile()
+    } catch (err) { /* non-critical */ }
+  }
 
   if (loading) return <div className="page"><div className="skeleton" style={{ height: 22, width: 140, marginBottom: 20 }} /><SkeletonStatGrid /></div>
 
@@ -95,6 +130,10 @@ export default function Dashboard() {
           {profile?.photo ? <img src={profile.photo} alt="" /> : initials}
         </Link>
       </div>
+
+      {checklist && !checklistDismissed && checklist.some((i) => !i.done) && (
+        <GettingStartedChecklist items={checklist} onDismiss={dismissChecklist} />
+      )}
 
       <div className="overview-card">
         <div className="overview-card__header">

@@ -3,9 +3,20 @@
 // against each user's last-seen version (stored on their profile) — nothing
 // else needs to change, and it costs nothing if you skip a release.
 
-export const CURRENT_VERSION = '1.2.0'
+export const CURRENT_VERSION = '1.3.0'
 
 export const CHANGELOG = [
+  {
+    version: '1.3.0',
+    date: '2026-07-12',
+    title: "What's new",
+    items: [
+      'New "Getting started" checklist on the Dashboard for new organizations — shows what to set up first.',
+      'Mark a student absent and instantly notify their parent on WhatsApp, right from the Attendance page.',
+      'Teachers in an organization can now mark attendance directly, not just suggest it.',
+      'Replay the app tour anytime from Profile → Help.'
+    ]
+  },
   {
     version: '1.2.0',
     date: '2026-07-12',

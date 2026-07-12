@@ -16,6 +16,10 @@ service cloud.firestore {
     function canEdit() {
       return myProfile().role == 'head' || myProfile().mode == 'solo';
     }
+    // Attendance is the one exception where org teachers can write too.
+    function canMarkAttendance() {
+      return canEdit() || (myProfile().role == 'teacher' && myProfile().mode == 'org');
+    }
     function inMyOrg(data) {
       return data.orgId == myOrgId();
     }
@@ -43,7 +47,7 @@ service cloud.firestore {
 
     match /attendance/{docId} {
       allow read: if signedIn() && inMyOrg(resource.data);
-      allow write: if signedIn() && inMyOrg(request.resource.data) && canEdit();
+      allow write: if signedIn() && inMyOrg(request.resource.data) && canMarkAttendance();
     }
 
     match /feePayments/{docId} {

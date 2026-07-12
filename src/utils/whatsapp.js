@@ -25,3 +25,14 @@ export function buildFeeReminderLink({ parentPhone, studentName, monthLabel, due
 
   return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`
 }
+
+export function buildAbsentNoticeLink({ parentPhone, studentName, dateLabel, centerName }) {
+  const phone = normalizePhone(parentPhone)
+
+  const message =
+    `Hello, this is a message from ${centerName || 'the coaching center'}.\n` +
+    `${studentName} was marked absent today (${dateLabel}).\n` +
+    `Please let us know if there's anything we should be aware of. Thank you!`
+
+  return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`
+}

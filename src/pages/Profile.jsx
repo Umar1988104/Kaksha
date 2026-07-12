@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { collection, doc, getDoc, getDocs, query, setDoc, where } from 'firebase/firestore'
 import { db } from '../firebase'
 import { useAuth } from '../context/AuthContext'
@@ -8,7 +9,7 @@ import ConfirmModal from '../components/ConfirmModal'
 import PhotoUploader from '../components/PhotoUploader'
 import DeleteAccountModal from '../components/DeleteAccountModal'
 import {
-  Building2, Check, Copy, HelpCircle, Info, LogOut, Mail, Pencil, Trash2, User, Users
+  Building2, Check, Copy, HelpCircle, Info, LogOut, Mail, Pencil, RotateCcw, Trash2, User, Users
 } from 'lucide-react'
 
 const FIELD_LABELS = {
@@ -21,6 +22,7 @@ const FIELD_LABELS = {
 export default function Profile() {
   const { user, logout, deleteAccount } = useAuth()
   const { profile, isHead, isOrgTeacher, mode, orgId, refreshProfile } = useRole()
+  const navigate = useNavigate()
 
   const [form, setForm] = useState({ name: '', phone: '', address: '', gender: '', dob: '', centerName: '', photo: null })
   const [isEditing, setIsEditing] = useState(false)
@@ -114,6 +116,12 @@ export default function Profile() {
     if (!confirm("Leave this organization and go back to working solo? You'll get your own private space — the organization's data stays with them, not you.")) return
     await setDoc(doc(db, 'users', user.uid), { mode: 'solo', orgId: user.uid }, { merge: true })
     await refreshProfile()
+  }
+
+  async function replayTour() {
+    await setDoc(doc(db, 'users', user.uid), { hasSeenTour: false }, { merge: true })
+    await refreshProfile()
+    navigate('/')
   }
 
   if (loading) return <div className="screen-loading">Loading…</div>
@@ -261,6 +269,9 @@ export default function Profile() {
             <li>WhatsApp reminder not opening? Make sure WhatsApp is installed on this device.</li>
             <li>Data not saving? Check your internet connection — changes need to sync to the cloud.</li>
           </ul>
+          <button className="btn btn--ghost btn--sm" style={{ marginTop: 14 }} onClick={replayTour}>
+            <RotateCcw size={13} style={{ verticalAlign: '-2px', marginRight: 6 }} />Replay app tour
+          </button>
         </div>
       )}
 

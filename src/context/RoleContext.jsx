@@ -34,13 +34,15 @@ export function RoleProvider({ children }) {
   // Who can actually add/edit/delete data:
   // - Head: yes, always
   // - Solo teacher: yes, it's their own personal space
-  // - Org teacher: no, view + suggest only
+  // - Org teacher: no, view + suggest only — EXCEPT attendance, which every
+  //   teacher marks day-to-day regardless of role.
   const canEdit = role === 'head' || mode === 'solo'
   const isHead = role === 'head'
   const isOrgTeacher = role === 'teacher' && mode === 'org'
+  const canMarkAttendance = canEdit || isOrgTeacher
 
   return (
-    <RoleContext.Provider value={{ profile, loading, role, mode, orgId, canEdit, isHead, isOrgTeacher, refreshProfile }}>
+    <RoleContext.Provider value={{ profile, loading, role, mode, orgId, canEdit, canMarkAttendance, isHead, isOrgTeacher, refreshProfile }}>
       {children}
     </RoleContext.Provider>
   )

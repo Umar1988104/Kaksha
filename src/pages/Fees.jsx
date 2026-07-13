@@ -3,9 +3,14 @@ import { collection, doc, getDoc, getDocs, orderBy, query, setDoc, where } from 
 import { db } from '../firebase'
 import { useRole } from '../context/RoleContext'
 import StatusStamp from '../components/StatusStamp'
+import BulkReminderModal from '../components/BulkReminderModal'
 import { buildFeeReminderLink } from '../utils/whatsapp'
+import { buildReceiptText } from '../utils/receipt'
+import { shareOrCopy } from '../utils/share'
+import { downloadCSV } from '../utils/csv'
 import { currentMonthKey, lastNMonthKeys, monthLabel } from '../utils/dates'
 import { SkeletonList } from '../components/Skeleton'
+import { Download, Receipt, Send } from 'lucide-react'
 
 export default function Fees() {
   const { orgId, canEdit, profile } = useRole()
@@ -15,6 +20,8 @@ export default function Fees() {
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
   const [centerName, setCenterName] = useState('')
+  const [showBulkReminder, setShowBulkReminder] = useState(false)
+  const [receiptCopiedId, setReceiptCopiedId] = useState(null)
 
   async function load() {
     setLoading(true)
@@ -49,8 +56,6 @@ export default function Fees() {
       paidDate: new Date().toISOString().slice(0, 10)
     })
     if (navigator.onLine) await write
-    // Reads locally cached data even before the write reaches the server,
-    // so the UI updates instantly whether online or offline.
     load()
   }
 
@@ -66,6 +71,31 @@ export default function Fees() {
     load()
   }
 
+  async function shareReceipt(student, payment) {
+    const text = buildReceiptText({
+      centerName, studentName: student.name, batch: student.batch,
+      monthLabel: monthLabel(month), amount: payment.amountPaid, paidDate: payment.paidDate
+    })
+    const result = await shareOrCopy(text)
+    if (result === 'copied') {
+      setReceiptCopiedId(student.id)
+      setTimeout(() => setReceiptCopiedId(null), 2000)
+    }
+  }
+
+  function exportCSV() {
+    const rows = students.map((s) => {
+      const p = payments[`${s.id}_${month}`]
+      const isPaid = p && p.status === 'paid'
+      return {
+        Name: s.name, Batch: s.batch, Subject: s.subject, 'Monthly Fee': s.monthlyFee,
+        Status: isPaid ? 'Paid' : 'Due', 'Amount Paid': isPaid ? p.amountPaid : 0,
+        'Paid Date': isPaid ? p.paidDate : ''
+      }
+    })
+    downloadCSV(`fees-${month}.csv`, rows)
+  }
+
   const rows = students
     .map((s) => ({ student: s, payment: payments[`${s.id}_${month}`] }))
     .filter((r) => {
@@ -75,13 +105,23 @@ export default function Fees() {
       return true
     })
 
+  const dueStudents = students.filter((s) => {
+    const p = payments[`${s.id}_${month}`]
+    return !(p && p.status === 'paid') && s.parentPhone
+  })
+
   if (loading) return <div className="page"><SkeletonList rows={4} /></div>
 
   return (
     <div className="page">
-      <div className="page__header">
-        <h1>Fees</h1>
-        <p className="page__sub">{monthLabel(month)}{!canEdit ? ' · view only' : ''}</p>
+      <div className="page__header page__header--row">
+        <div>
+          <h1>Fees</h1>
+          <p className="page__sub">{monthLabel(month)}{!canEdit ? ' · view only' : ''}</p>
+        </div>
+        <button className="btn btn--ghost btn--sm" onClick={exportCSV}>
+          <Download size={14} style={{ verticalAlign: '-2px', marginRight: 4 }} />Export CSV
+        </button>
       </div>
 
       <div className="filter-row">
@@ -101,6 +141,13 @@ export default function Fees() {
         </label>
       </div>
 
+      {canEdit && dueStudents.length > 0 && (
+        <button className="btn btn--whatsapp btn--sm" style={{ marginBottom: 14 }} onClick={() => setShowBulkReminder(true)}>
+          <Send size={13} style={{ verticalAlign: '-2px', marginRight: 6 }} />
+          Remind all due ({dueStudents.length})
+        </button>
+      )}
+
       <div className="card-list">
         {rows.map(({ student, payment }) => {
           const isPaid = payment && payment.status === 'paid'
@@ -113,7 +160,13 @@ export default function Fees() {
               <StatusStamp status={isPaid ? 'paid' : 'due'} />
               <div className="fee-row__actions">
                 {isPaid ? (
-                  canEdit && <button className="btn btn--ghost btn--sm" onClick={() => markDue(student)}>Undo</button>
+                  <>
+                    <button className="whatsapp-icon-btn" title="Share receipt" onClick={() => shareReceipt(student, payment)}>
+                      <Receipt size={15} />
+                    </button>
+                    {receiptCopiedId === student.id && <span className="copied-hint">Copied!</span>}
+                    {canEdit && <button className="btn btn--ghost btn--sm" onClick={() => markDue(student)}>Undo</button>}
+                  </>
                 ) : (
                   <>
                     <a
@@ -137,6 +190,15 @@ export default function Fees() {
           )
         })}
       </div>
+
+      {showBulkReminder && (
+        <BulkReminderModal
+          dueStudents={dueStudents}
+          monthLabel={monthLabel(month)}
+          centerName={centerName}
+          onClose={() => setShowBulkReminder(false)}
+        />
+      )}
     </div>
   )
 }

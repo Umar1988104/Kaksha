@@ -4,22 +4,32 @@ import { addDoc, collection, deleteDoc, doc, getDocs, orderBy, query, updateDoc,
 import { db } from '../firebase'
 import StudentForm from '../components/StudentForm'
 import { useRole } from '../context/RoleContext'
-import { ChevronDown, ChevronRight, FolderOpen, MessageCircle, RotateCcw, Trash2, UserMinus, Users } from 'lucide-react'
+import { ChevronDown, ChevronRight, Download, FolderOpen, MessageCircle, RotateCcw, Trash2, Upload, UserMinus, Users } from 'lucide-react'
 import EmptyState from '../components/EmptyState'
 import { SkeletonList } from '../components/Skeleton'
 import ConfirmModal from '../components/ConfirmModal'
+import ImportStudentsModal from '../components/ImportStudentsModal'
 import { buildWhatsAppChatLink } from '../utils/whatsapp'
+import { downloadCSV } from '../utils/csv'
 
 export default function Students() {
   const { orgId, canEdit } = useRole()
   const [students, setStudents] = useState([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
+  const [showImport, setShowImport] = useState(false)
   const [editing, setEditing] = useState(null)
   const [search, setSearch] = useState('')
   const [collapsed, setCollapsed] = useState({})
   const [view, setView] = useState('active') // 'active' | 'left'
   const [confirmAction, setConfirmAction] = useState(null) // { type: 'markLeft'|'delete', student }
+
+  function exportCSV() {
+    downloadCSV('students.csv', students.map((s) => ({
+      Name: s.name, Batch: s.batch, Subject: s.subject, 'Monthly Fee': s.monthlyFee,
+      'Parent Phone': s.parentPhone, Phone: s.phone || '', Status: s.active !== false ? 'Active' : 'Left'
+    })))
+  }
 
   async function load() {
     setLoading(true)
@@ -87,7 +97,17 @@ export default function Students() {
           <h1>Students</h1>
           <p className="page__sub">{activeStudents.length} active{leftStudents.length > 0 ? ` · ${leftStudents.length} left` : ''}{!canEdit ? ' · view only' : ''}</p>
         </div>
-        {canEdit && view === 'active' && <button className="btn btn--primary" onClick={() => { setEditing(null); setShowForm(true) }}>+ Add student</button>}
+        {canEdit && view === 'active' && (
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <button className="btn btn--ghost btn--sm" onClick={() => setShowImport(true)}>
+              <Upload size={14} style={{ verticalAlign: '-2px', marginRight: 4 }} />Import CSV
+            </button>
+            <button className="btn btn--ghost btn--sm" onClick={exportCSV}>
+              <Download size={14} style={{ verticalAlign: '-2px', marginRight: 4 }} />Export
+            </button>
+            <button className="btn btn--primary" onClick={() => { setEditing(null); setShowForm(true) }}>+ Add student</button>
+          </div>
+        )}
       </div>
 
       <div className="tab-row">
@@ -193,6 +213,14 @@ export default function Students() {
             />
           </div>
         </div>
+      )}
+
+      {showImport && (
+        <ImportStudentsModal
+          orgId={orgId}
+          onClose={() => setShowImport(false)}
+          onImported={() => { setShowImport(false); load() }}
+        />
       )}
 
       {confirmAction?.type === 'markLeft' && (

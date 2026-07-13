@@ -3,9 +3,22 @@
 // against each user's last-seen version (stored on their profile) — nothing
 // else needs to change, and it costs nothing if you skip a release.
 
-export const CURRENT_VERSION = '1.3.0'
+export const CURRENT_VERSION = '2.1.0'
 
 export const CHANGELOG = [
+  {
+    version: '2.1.0',
+    date: '2026-07-13',
+    title: "What's new",
+    items: [
+      'Remind all due students on WhatsApp in one flow, instead of one at a time.',
+      'Import students in bulk from a CSV file — no more adding them one by one.',
+      'Attendance alerts on the Dashboard flag students with frequent recent absences.',
+      'Share a fee receipt on WhatsApp the moment a payment is marked paid.',
+      'Trend charts on the Dashboard — see fee collection and attendance over the last 6 months.',
+      'Export your students, fees, and expense ledger as CSV files anytime.'
+    ]
+  },
   {
     version: '1.3.0',
     date: '2026-07-12',

@@ -6,7 +6,8 @@ import { currentMonthKey, lastNMonthKeys, monthLabel } from '../utils/dates'
 import AddTransactionModal from '../components/AddTransactionModal'
 import EmptyState from '../components/EmptyState'
 import { SkeletonList } from '../components/Skeleton'
-import { ArrowDownCircle, ArrowUpCircle, Plus, Wallet, Receipt } from 'lucide-react'
+import { ArrowDownCircle, ArrowUpCircle, Download, Plus, Wallet, Receipt } from 'lucide-react'
+import { downloadCSV } from '../utils/csv'
 
 export default function Expenses() {
   const { orgId } = useRole()
@@ -88,9 +89,17 @@ export default function Expenses() {
           <h1>Expenses</h1>
           <p className="page__sub">{monthLabel(month)}</p>
         </div>
-        <button className="btn btn--primary" onClick={() => setShowAdd(true)}>
-          <Plus size={15} style={{ verticalAlign: '-3px', marginRight: 4 }} />Add entry
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button className="btn btn--ghost btn--sm" onClick={() => downloadCSV(`ledger-${month}.csv`, ledger.map((e) => ({
+            Date: e.date, Type: e.type === 'received' ? 'Received' : 'Deducted', Description: e.label,
+            Category: e.category || '', Amount: e.amount
+          })))}>
+            <Download size={14} style={{ verticalAlign: '-2px', marginRight: 4 }} />Export
+          </button>
+          <button className="btn btn--primary" onClick={() => setShowAdd(true)}>
+            <Plus size={15} style={{ verticalAlign: '-3px', marginRight: 4 }} />Add entry
+          </button>
+        </div>
       </div>
 
       <div className="filter-row">

@@ -4,13 +4,15 @@ import { collection, doc, getDocs, limit, query, setDoc, where } from 'firebase/
 import { db } from '../firebase'
 import { useAuth } from '../context/AuthContext'
 import { useRole } from '../context/RoleContext'
-import { currentMonthKey, todayISO } from '../utils/dates'
+import { currentMonthKey, lastNMonthKeys, monthLabel, todayISO } from '../utils/dates'
 import {
   CalendarCheck, ClipboardList, IndianRupee, Plus, Users, Wallet,
   UserPlus, MessageSquareText
 } from 'lucide-react'
 import { SkeletonStatGrid } from '../components/Skeleton'
 import GettingStartedChecklist from '../components/GettingStartedChecklist'
+import AttendanceAlerts from '../components/AttendanceAlerts'
+import TrendCharts from '../components/TrendCharts'
 
 export default function Dashboard() {
   const { user } = useAuth()
@@ -20,6 +22,9 @@ export default function Dashboard() {
   const [activity, setActivity] = useState([])
   const [checklist, setChecklist] = useState(null)
   const [checklistDismissed, setChecklistDismissed] = useState(false)
+  const [attendanceAlerts, setAttendanceAlerts] = useState([])
+  const [feeTrend, setFeeTrend] = useState([])
+  const [attendanceTrend, setAttendanceTrend] = useState([])
 
   useEffect(() => {
     if (!orgId) return
@@ -29,54 +34,88 @@ export default function Dashboard() {
 
       const studentsSnap = await getDocs(query(collection(db, 'students'), where('orgId', '==', orgId)))
       const students = studentsSnap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((s) => s.active !== false)
+      const studentNames = {}
+      students.forEach((s) => { studentNames[s.id] = s.name })
 
-      const paymentsSnap = await getDocs(query(collection(db, 'feePayments'), where('orgId', '==', orgId), where('month', '==', monthKey)))
-      const payments = paymentsSnap.docs.map((d) => d.data())
-      const collectedToday = payments.filter((p) => p.status === 'paid' && p.paidDate === today).reduce((s, p) => s + Number(p.amountPaid || 0), 0)
-
-      const attendanceTodaySnap = await getDocs(query(collection(db, 'attendance'), where('orgId', '==', orgId), where('date', '==', today)))
-      const attDocs = attendanceTodaySnap.docs.map((d) => d.data())
-      const presentToday = attDocs.filter((a) => a.status === 'present').length
-      const attendancePct = attDocs.length ? Math.round((presentToday / attDocs.length) * 100) : null
-
-      const examsSnap = await getDocs(query(collection(db, 'exams'), where('orgId', '==', orgId)))
+      // Fetch all-time fee payments and attendance once — reused for
+      // today's stats, the getting-started checklist, low-attendance
+      // alerts, and the 6-month trend charts, instead of separate fetches.
+      const [allPaymentsSnap, allAttendanceSnap, examsSnap] = await Promise.all([
+        getDocs(query(collection(db, 'feePayments'), where('orgId', '==', orgId))),
+        getDocs(query(collection(db, 'attendance'), where('orgId', '==', orgId))),
+        getDocs(query(collection(db, 'exams'), where('orgId', '==', orgId)))
+      ])
+      const allPayments = allPaymentsSnap.docs.map((d) => d.data())
+      const allAttendance = allAttendanceSnap.docs.map((d) => d.data())
       const exams = examsSnap.docs.map((d) => ({ id: d.id, ...d.data() }))
       const upcomingExams = exams.filter((e) => e.date >= today).length
 
+      const thisMonthPayments = allPayments.filter((p) => p.month === monthKey)
+      const collectedToday = thisMonthPayments.filter((p) => p.status === 'paid' && p.paidDate === today).reduce((s, p) => s + Number(p.amountPaid || 0), 0)
+
+      const attDocsToday = allAttendance.filter((a) => a.date === today)
+      const presentToday = attDocsToday.filter((a) => a.status === 'present').length
+      const attendancePct = attDocsToday.length ? Math.round((presentToday / attDocsToday.length) * 100) : null
+
       setStats({ totalStudents: students.length, collectedToday, attendancePct, examCount: upcomingExams })
 
-      // Getting-started checklist — only bother checking "any attendance
-      // marked ever" and "any teacher joined" if we don't already know the
-      // answer from data fetched above.
+      // Getting-started checklist
       if (canEdit && !profile?.dismissedChecklist) {
-        const anyAttendanceSnap = attDocs.length > 0
-          ? { size: 1 }
-          : await getDocs(query(collection(db, 'attendance'), where('orgId', '==', orgId), limit(1)))
-
         const items = [
           { label: 'Add your first student', done: students.length > 0, link: '/students' },
-          { label: 'Mark attendance for a batch', done: anyAttendanceSnap.size > 0, link: '/attendance' },
+          { label: 'Mark attendance for a batch', done: allAttendance.length > 0, link: '/attendance' },
           { label: 'Create your first exam', done: exams.length > 0, link: '/exams' }
         ]
-
         if (isHead) {
           const anyTeacherSnap = await getDocs(query(collection(db, 'users'), where('orgId', '==', orgId), where('role', '==', 'teacher'), limit(1)))
           items.push({ label: 'Invite a teacher with your join code', done: anyTeacherSnap.size > 0, link: '/teachers' })
         }
-
         setChecklist(items)
+      }
+
+      // Low-attendance alerts — 3+ absences in the last 14 days
+      if (canEdit) {
+        const cutoff = new Date()
+        cutoff.setDate(cutoff.getDate() - 14)
+        const cutoffStr = cutoff.toISOString().slice(0, 10)
+        const recentAbsences = {}
+        allAttendance.forEach((a) => {
+          if (a.status === 'absent' && a.date >= cutoffStr) {
+            recentAbsences[a.studentId] = (recentAbsences[a.studentId] || 0) + 1
+          }
+        })
+        const alerts = Object.entries(recentAbsences)
+          .filter(([, count]) => count >= 3)
+          .map(([studentId, count]) => ({ studentId, count, name: studentNames[studentId] || 'A student' }))
+          .sort((a, b) => b.count - a.count)
+        setAttendanceAlerts(alerts)
+      }
+
+      // 6-month trend charts
+      if (canEdit) {
+        const months = lastNMonthKeys(6).reverse()
+        const feeByMonth = months.map((m) => ({
+          label: monthLabel(m).split(' ')[0].slice(0, 3),
+          value: allPayments.filter((p) => p.month === m && p.status === 'paid').reduce((s, p) => s + Number(p.amountPaid || 0), 0)
+        }))
+        const attByMonth = months.map((m) => {
+          const recs = allAttendance.filter((a) => a.date && a.date.startsWith(m))
+          const present = recs.filter((a) => a.status === 'present').length
+          return { label: monthLabel(m).split(' ')[0].slice(0, 3), value: recs.length ? Math.round((present / recs.length) * 100) : 0 }
+        })
+        setFeeTrend(feeByMonth)
+        setAttendanceTrend(attByMonth)
       }
 
       // Recent activity — built from real records (paid fees, today's
       // attendance, newest exam), not placeholder data.
       const feed = []
-      payments
+      thisMonthPayments
         .filter((p) => p.status === 'paid' && p.paidDate)
         .sort((a, b) => (b.paidDate || '').localeCompare(a.paidDate || ''))
         .slice(0, 2)
         .forEach((p) => {
-          const student = students.find((s) => s.id === p.studentId)
-          feed.push({ type: 'fee', text: `${student?.name || 'A student'} paid fee of ₹${p.amountPaid}`, date: p.paidDate })
+          feed.push({ type: 'fee', text: `${studentNames[p.studentId] || 'A student'} paid fee of ₹${p.amountPaid}`, date: p.paidDate })
         })
       if (presentToday > 0) {
         feed.push({ type: 'attendance', text: `${presentToday} student${presentToday === 1 ? '' : 's'} marked present today`, date: today })
@@ -135,6 +174,8 @@ export default function Dashboard() {
         <GettingStartedChecklist items={checklist} onDismiss={dismissChecklist} />
       )}
 
+      <AttendanceAlerts alerts={attendanceAlerts} />
+
       <div className="overview-card">
         <div className="overview-card__header">
           <span>Today Overview</span>
@@ -184,6 +225,13 @@ export default function Dashboard() {
           )
         })}
       </div>
+
+      {canEdit && feeTrend.length > 0 && (
+        <>
+          <h3 className="section-title">Trends</h3>
+          <TrendCharts feeTrend={feeTrend} attendanceTrend={attendanceTrend} />
+        </>
+      )}
 
       {activity.length > 0 && (
         <>

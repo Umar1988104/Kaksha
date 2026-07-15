@@ -1,18 +1,19 @@
 import { useState } from 'react'
-import { addDoc, collection, doc, getDocs, query, setDoc, where } from 'firebase/firestore'
+import { addDoc, collection, doc, getDoc, getDocs, query, setDoc, where } from 'firebase/firestore'
 import { db } from '../firebase'
 import { useAuth } from '../context/AuthContext'
 import { useRole } from '../context/RoleContext'
 import { generateOrgCode } from '../utils/orgCode'
 import { sendNotification } from '../utils/notifications'
-import { Building2, Check, GraduationCap, Users } from 'lucide-react'
+import { Building2, Check, GraduationCap, Heart, Users } from 'lucide-react'
 
 export default function Onboarding() {
   const { user } = useAuth()
   const { refreshProfile } = useRole()
-  const [step, setStep] = useState('who') // who | head-details | teacher-mode | join-code | done
+  const [step, setStep] = useState('who') // who | head-details | teacher-mode | join-code | parent-code | done
   const [centerName, setCenterName] = useState('')
   const [joinCode, setJoinCode] = useState('')
+  const [parentCode, setParentCode] = useState('')
   const [name, setName] = useState('')
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
@@ -106,6 +107,34 @@ export default function Onboarding() {
     }
   }
 
+  async function joinAsParent(e) {
+    e.preventDefault()
+    setSaving(true)
+    setError('')
+    try {
+      const codeSnap = await getDoc(doc(db, 'parentCodes', parentCode.trim().toUpperCase()))
+      if (!codeSnap.exists()) {
+        setError("No student found with that code. Double-check with your child's teacher.")
+        setSaving(false)
+        return
+      }
+      const { studentId, orgId: studentOrgId } = codeSnap.data()
+      await setDoc(doc(db, 'users', user.uid), {
+        role: 'parent',
+        orgId: studentOrgId,
+        linkedStudentIds: [studentId],
+        name: name || 'Parent',
+        email: user.email,
+        createdAt: new Date().toISOString()
+      })
+      await refreshProfile()
+    } catch (err) {
+      setError('Something went wrong. Please try again.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
   return (
     <div className="login-screen">
       <div className="login-card" style={{ maxWidth: 440 }}>
@@ -132,6 +161,13 @@ export default function Onboarding() {
                 <div>
                   <div className="onboard-card__title">I'm a Teacher</div>
                   <div className="onboard-card__sub">I teach — solo, or as part of a coaching center</div>
+                </div>
+              </button>
+              <button className="onboard-card" onClick={() => setStep('parent-code')}>
+                <Heart size={22} />
+                <div>
+                  <div className="onboard-card__title">I'm a Parent</div>
+                  <div className="onboard-card__sub">View my child's attendance, marks, and homework</div>
                 </div>
               </button>
             </div>
@@ -194,6 +230,25 @@ export default function Onboarding() {
             <div className="modal-form__actions">
               <button type="button" className="btn btn--ghost" onClick={() => setStep('teacher-mode')}>Back</button>
               <button type="submit" className="btn btn--primary" disabled={saving}>{saving ? 'Joining…' : 'Join'}</button>
+            </div>
+          </form>
+        )}
+
+        {step === 'parent-code' && (
+          <form onSubmit={joinAsParent}>
+            <h1 className="login-card__title">Enter your child's access code</h1>
+            <p className="login-card__sub">Ask your child's teacher or coaching center for this code.</p>
+            <label style={{ fontSize: 13, fontWeight: 600, color: '#444C5C', display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 16 }}>
+              Access code
+              <input
+                className="search-input" style={{ margin: 0, textTransform: 'uppercase', letterSpacing: '0.1em', fontFamily: 'var(--font-mono)' }}
+                required value={parentCode} onChange={(e) => setParentCode(e.target.value)} placeholder="e.g. K7X9QB" maxLength={6}
+              />
+            </label>
+            {error && <div className="form-error">{error}</div>}
+            <div className="modal-form__actions">
+              <button type="button" className="btn btn--ghost" onClick={() => setStep('who')}>Back</button>
+              <button type="submit" className="btn btn--primary" disabled={saving}>{saving ? 'Linking…' : 'Continue'}</button>
             </div>
           </form>
         )}

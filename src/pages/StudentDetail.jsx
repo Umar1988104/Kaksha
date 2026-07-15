@@ -1,16 +1,18 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { collection, doc, getDoc, getDocs, query, where } from 'firebase/firestore'
+import { collection, doc, getDoc, getDocs, query, setDoc, where } from 'firebase/firestore'
 import { db } from '../firebase'
 import { useRole } from '../context/RoleContext'
 import StatusStamp from '../components/StatusStamp'
 import { buildFeeReminderLink, buildWhatsAppChatLink } from '../utils/whatsapp'
+import { generateOrgCode } from '../utils/orgCode'
 import { lastNMonthKeys, monthLabel } from '../utils/dates'
-import { MessageCircle } from 'lucide-react'
+import { Check, Copy, MessageCircle, Send } from 'lucide-react'
+import { shareOrCopy } from '../utils/share'
 
 export default function StudentDetail() {
   const { id } = useParams()
-  const { profile, orgId } = useRole()
+  const { profile, orgId, canEdit } = useRole()
   const [student, setStudent] = useState(null)
   const [payments, setPayments] = useState({})
   const [attendanceStats, setAttendanceStats] = useState({ present: 0, total: 0 })
@@ -18,6 +20,7 @@ export default function StudentDetail() {
   const [loading, setLoading] = useState(true)
   const [centerName, setCenterName] = useState('')
   const [error, setError] = useState('')
+  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -59,6 +62,26 @@ export default function StudentDetail() {
     }
     if (profile && orgId) load()
   }, [id, profile, orgId])
+
+  async function generateAccessCode() {
+    const code = generateOrgCode()
+    await setDoc(doc(db, 'students', id), { parentAccessCode: code }, { merge: true })
+    // Separate lookup doc — lets a brand-new parent (no profile yet) find
+    // this student by code without needing broad read access to students.
+    await setDoc(doc(db, 'parentCodes', code), { studentId: id, orgId, createdAt: new Date().toISOString() })
+    setStudent((s) => ({ ...s, parentAccessCode: code }))
+  }
+
+  async function shareAccessCode() {
+    const text = `Hi! You can view ${student.name}'s attendance, marks, and homework in the Kaksha app.\n\nDownload the app and choose "I'm a Parent", then enter this code:\n\n${student.parentAccessCode}`
+    await shareOrCopy(text)
+  }
+
+  function copyCode() {
+    navigator.clipboard.writeText(student.parentAccessCode)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1500)
+  }
 
   if (loading) return <div className="screen-loading">Loading…</div>
   if (error) return <div className="empty-state">{error}</div>
@@ -156,6 +179,32 @@ export default function StudentDetail() {
             </table>
           )}
         </section>
+
+        {canEdit && (
+          <section className="detail-card detail-card--wide">
+            <h3>Parent access</h3>
+            <p className="detail-card__hint" style={{ marginBottom: 12 }}>
+              Share this code with {student.name}'s parent — they can use it to view attendance, marks, and homework in their own login.
+            </p>
+            {student.parentAccessCode ? (
+              <div className="join-code-card">
+                <div className="join-code-card__code">{student.parentAccessCode}</div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button className="btn btn--ghost btn--sm" onClick={copyCode}>
+                    {copied ? <><Check size={14} style={{ verticalAlign: '-2px', marginRight: 4 }} />Copied</> : <><Copy size={14} style={{ verticalAlign: '-2px', marginRight: 4 }} />Copy</>}
+                  </button>
+                  {student.parentPhone && (
+                    <button className="btn btn--whatsapp btn--sm" onClick={shareAccessCode}>
+                      <Send size={13} style={{ verticalAlign: '-2px', marginRight: 4 }} />Share
+                    </button>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <button className="btn btn--primary btn--sm" onClick={generateAccessCode}>Generate access code</button>
+            )}
+          </section>
+        )}
       </div>
     </div>
   )

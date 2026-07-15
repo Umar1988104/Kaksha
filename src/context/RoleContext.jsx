@@ -27,22 +27,25 @@ export function RoleProvider({ children }) {
     refreshProfile()
   }, [user, refreshProfile])
 
-  const role = profile?.role || null // 'head' | 'teacher'
+  const role = profile?.role || null // 'head' | 'teacher' | 'parent'
   const mode = profile?.mode || null // 'solo' | 'org'
   const orgId = profile?.orgId || null
+  const linkedStudentIds = profile?.linkedStudentIds || []
 
   // Who can actually add/edit/delete data:
   // - Head: yes, always
   // - Solo teacher: yes, it's their own personal space
   // - Org teacher: no, view + suggest only — EXCEPT attendance, which every
   //   teacher marks day-to-day regardless of role.
+  // - Parent: never — read-only view of their own linked child only.
   const canEdit = role === 'head' || mode === 'solo'
   const isHead = role === 'head'
   const isOrgTeacher = role === 'teacher' && mode === 'org'
+  const isParent = role === 'parent'
   const canMarkAttendance = canEdit || isOrgTeacher
 
   return (
-    <RoleContext.Provider value={{ profile, loading, role, mode, orgId, canEdit, canMarkAttendance, isHead, isOrgTeacher, refreshProfile }}>
+    <RoleContext.Provider value={{ profile, loading, role, mode, orgId, linkedStudentIds, canEdit, canMarkAttendance, isHead, isOrgTeacher, isParent, refreshProfile }}>
       {children}
     </RoleContext.Provider>
   )

@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import { useRole } from '../context/RoleContext'
 import { CURRENT_VERSION } from '../changelog'
 import {
-  Bell, CalendarCheck, CalendarDays, ClipboardList, IndianRupee, LayoutDashboard,
+  Bell, BookOpen, CalendarCheck, CalendarDays, ClipboardList, IndianRupee, LayoutDashboard,
   Megaphone, MessageSquareText, Search, Sparkles, UserCog, Users, X
 } from 'lucide-react'
 
@@ -15,7 +15,8 @@ const BASE_STEPS = [
   { icon: CalendarCheck, title: 'Attendance', body: 'Pick a date and batch, mark present/absent, and save — works even with no signal, it\u2019ll sync once you\u2019re back online. After marking, you can share the absentee list straight to WhatsApp in one tap.' },
   { icon: IndianRupee, title: 'Fees', body: 'See who\u2019s paid and who\u2019s due each month. One tap opens WhatsApp with a reminder message ready to send to the parent.' },
   { icon: ClipboardList, title: 'Exams', body: 'Create an exam once (name, subject, batch, total marks), then enter every student\u2019s marks in one place. Marks automatically build each student\u2019s report card.' },
-  { icon: Megaphone, title: 'Notices', body: 'Post homework, holidays, or announcements — optionally pinned to a date so they also show up on the Calendar.' },
+  { icon: Megaphone, title: 'Notices', body: 'Post holidays and announcements — optionally pinned to a date so they also show up on the Calendar.' },
+  { icon: BookOpen, title: 'Homework', body: 'Post assignments with a subject, batch, and due date — instead of typing it out on WhatsApp every time.' },
   { icon: CalendarDays, title: 'Calendar', body: 'See every exam and dated notice on one month view — tap any day to see what\u2019s scheduled.' },
   { icon: Search, title: 'Search', body: 'The search icon at the top finds any student or exam instantly by name, batch, or subject.' },
   { icon: Bell, title: 'Notifications', body: 'The bell icon keeps you posted — suggestions from teachers, resolutions from your head, and new teachers joining, all in real time.' }

@@ -3,9 +3,30 @@
 // against each user's last-seen version (stored on their profile) — nothing
 // else needs to change, and it costs nothing if you skip a release.
 
-export const CURRENT_VERSION = '2.1.0'
+export const CURRENT_VERSION = '4.0.0'
 
 export const CHANGELOG = [
+  {
+    version: '4.0.0',
+    date: '2026-07-13',
+    title: "What's new",
+    items: [
+      'Parent portal — parents get their own login to see their child\'s attendance, marks, report card, fee status, and homework.',
+      'A generated access code (from each student\'s profile page) is how parents link their account — one parent can link multiple children.',
+      'Parents can message the center head directly, and the head gets a Parent Messages inbox to reply.',
+      'Note: messages don\'t auto-delete for now — that would need a paid Firebase upgrade we\'re holding off on.'
+    ]
+  },
+  {
+    version: '3.0.0',
+    date: '2026-07-13',
+    title: "What's new",
+    items: [
+      'New Homework section — post assignments with a subject, batch, and due date, instead of typing it out on WhatsApp every time.',
+      'Homework with a due date now shows up on the Calendar too.',
+      'Overdue homework is flagged in red so nothing slips through.'
+    ]
+  },
   {
     version: '2.1.0',
     date: '2026-07-13',

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useRole } from '../context/RoleContext'
-import { CalendarCheck, CalendarDays, ClipboardList, IndianRupee, LayoutDashboard, LogOut, Megaphone, MessageSquareText, Search, User, UserCog, Users, Wallet } from 'lucide-react'
+import { BookOpen, CalendarCheck, CalendarDays, ClipboardList, IndianRupee, LayoutDashboard, LogOut, Megaphone, MessageCircle, MessageSquareText, Search, User, UserCog, Users, Wallet } from 'lucide-react'
 import ConfirmModal from './ConfirmModal'
 import NotificationBell from './NotificationBell'
 import GlobalSearch from './GlobalSearch'
@@ -24,10 +24,12 @@ export default function Navbar() {
   if (isHead) {
     links.push({ to: '/teachers', label: 'Teachers', icon: UserCog })
     links.push({ to: '/suggestions', label: 'Suggestions', icon: MessageSquareText })
+    links.push({ to: '/inbox', label: 'Parent Messages', icon: MessageCircle })
   } else if (isOrgTeacher) {
     links.push({ to: '/suggestions', label: 'Suggestions', icon: MessageSquareText })
   }
   links.push({ to: '/notices', label: 'Notices', icon: Megaphone })
+  links.push({ to: '/homework', label: 'Homework', icon: BookOpen })
   links.push({ to: '/calendar', label: 'Calendar', icon: CalendarDays })
   if (canEdit) links.push({ to: '/expenses', label: 'Expenses', icon: Wallet })
   links.push({ to: '/profile', label: 'Profile', icon: User })

@@ -21,8 +21,13 @@ const FIELD_LABELS = {
 
 export default function Profile() {
   const { user, logout, deleteAccount } = useAuth()
-  const { profile, isHead, isOrgTeacher, mode, orgId, refreshProfile } = useRole()
+  const { profile, isHead, isOrgTeacher, isParent, mode, orgId, linkedStudentIds, refreshProfile } = useRole()
   const navigate = useNavigate()
+
+  const [children, setChildren] = useState([])
+  const [addChildCode, setAddChildCode] = useState('')
+  const [addChildError, setAddChildError] = useState('')
+  const [addingChild, setAddingChild] = useState(false)
 
   const [form, setForm] = useState({ name: '', phone: '', address: '', gender: '', dob: '', centerName: '', photo: null })
   const [isEditing, setIsEditing] = useState(false)
@@ -58,10 +63,49 @@ export default function Profile() {
         const orgSnap = await getDoc(doc(db, 'organizations', orgId))
         if (orgSnap.exists()) setOrgCode(orgSnap.data().code || '')
       }
+      if (isParent && linkedStudentIds.length) {
+        const kids = await Promise.all(linkedStudentIds.map(async (id) => {
+          const snap = await getDoc(doc(db, 'students', id))
+          return snap.exists() ? { id: snap.id, ...snap.data() } : null
+        }))
+        setChildren(kids.filter(Boolean))
+      }
       setLoading(false)
     }
     load()
-  }, [profile, isHead, orgId])
+  }, [profile, isHead, isParent, orgId, linkedStudentIds])
+
+  async function handleAddChild(e) {
+    e.preventDefault()
+    setAddChildError('')
+    setAddingChild(true)
+    try {
+      const codeSnap = await getDoc(doc(db, 'parentCodes', addChildCode.trim().toUpperCase()))
+      if (!codeSnap.exists()) {
+        setAddChildError('No student found with that code.')
+        setAddingChild(false)
+        return
+      }
+      const { studentId, orgId: codeOrgId } = codeSnap.data()
+      if (codeOrgId !== orgId) {
+        setAddChildError("This code belongs to a different center — for now, one account can only link children at the same center.")
+        setAddingChild(false)
+        return
+      }
+      if (linkedStudentIds.includes(studentId)) {
+        setAddChildError('This child is already linked to your account.')
+        setAddingChild(false)
+        return
+      }
+      await setDoc(doc(db, 'users', user.uid), { linkedStudentIds: [...linkedStudentIds, studentId] }, { merge: true })
+      await refreshProfile()
+      setAddChildCode('')
+    } catch (err) {
+      setAddChildError('Something went wrong. Please try again.')
+    } finally {
+      setAddingChild(false)
+    }
+  }
 
   async function handleSave(e) {
     e.preventDefault()
@@ -142,14 +186,14 @@ export default function Profile() {
           <div className="profile-card__name">{form.name || 'Add your name'}</div>
           <div className="profile-card__email"><Mail size={14} /> {user?.email}</div>
           <div className="profile-card__role">
-            {isHead ? 'Center head' : mode === 'solo' ? 'Solo teacher' : 'Teacher (organization)'}
+            {isParent ? 'Parent' : isHead ? 'Center head' : mode === 'solo' ? 'Solo teacher' : 'Teacher (organization)'}
           </div>
         </div>
       </div>
 
       <div className="tab-row">
         <button className={'tab' + (section === 'profile' ? ' tab--active' : '')} onClick={() => setSection('profile')}><User size={14} />Profile</button>
-        <button className={'tab' + (section === 'settings' ? ' tab--active' : '')} onClick={() => setSection('settings')}><Users size={14} />Work mode</button>
+        <button className={'tab' + (section === 'settings' ? ' tab--active' : '')} onClick={() => setSection('settings')}><Users size={14} />{isParent ? 'My Children' : 'Work mode'}</button>
         <button className={'tab' + (section === 'help' ? ' tab--active' : '')} onClick={() => setSection('help')}><HelpCircle size={14} />Help</button>
         <button className={'tab' + (section === 'about' ? ' tab--active' : '')} onClick={() => setSection('about')}><Info size={14} />About</button>
       </div>
@@ -217,6 +261,35 @@ export default function Profile() {
 
       {section === 'settings' && (
         <div className="detail-card">
+          {isParent && (
+            <>
+              <h3><Users size={16} style={{ verticalAlign: '-3px', marginRight: 6 }} />My children</h3>
+              <div className="card-list" style={{ marginBottom: 16 }}>
+                {children.map((c) => (
+                  <div key={c.id} className="student-row">
+                    <div className="student-row__main student-row__main--with-avatar">
+                      {c.photo ? <img src={c.photo} alt="" className="row-avatar" /> : <div className="row-avatar row-avatar--fallback">{c.name.charAt(0).toUpperCase()}</div>}
+                      <div>
+                        <div className="student-row__name">{c.name}</div>
+                        <div className="student-row__meta">{c.batch}</div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <h3 style={{ fontSize: 14 }}>Add another child</h3>
+              <p className="detail-card__hint" style={{ marginBottom: 12 }}>Enter the access code for another child at the same center.</p>
+              <form onSubmit={handleAddChild} style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                <input
+                  className="search-input" style={{ margin: 0, flex: 1, minWidth: 160, textTransform: 'uppercase', fontFamily: 'var(--font-mono)' }}
+                  value={addChildCode} onChange={(e) => setAddChildCode(e.target.value)} placeholder="e.g. K7X9QB" maxLength={6} required
+                />
+                <button className="btn btn--primary" type="submit" disabled={addingChild}>{addingChild ? 'Adding…' : 'Add child'}</button>
+              </form>
+              {addChildError && <p className="form-error">{addChildError}</p>}
+            </>
+          )}
+
           {isHead && (
             <>
               <h3><Building2 size={16} style={{ verticalAlign: '-3px', marginRight: 6 }} />Your organization</h3>

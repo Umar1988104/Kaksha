@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useRole } from '../context/RoleContext'
-import { CalendarDays, ClipboardList, LogOut, Megaphone, MessageSquareText, User, UserCog, Wallet, X } from 'lucide-react'
+import { BookOpen, CalendarDays, ClipboardList, LogOut, Megaphone, MessageCircle, MessageSquareText, User, UserCog, Wallet, X } from 'lucide-react'
 import ConfirmModal from './ConfirmModal'
 
 export default function MoreSheet({ onClose }) {
@@ -11,9 +11,13 @@ export default function MoreSheet({ onClose }) {
   const [confirmingLogout, setConfirmingLogout] = useState(false)
 
   const items = [{ to: '/exams', label: 'Exams', icon: ClipboardList }]
-  if (isHead) items.push({ to: '/teachers', label: 'Teachers', icon: UserCog })
+  if (isHead) {
+    items.push({ to: '/teachers', label: 'Teachers', icon: UserCog })
+    items.push({ to: '/inbox', label: 'Parent Messages', icon: MessageCircle })
+  }
   if (isHead || isOrgTeacher) items.push({ to: '/suggestions', label: 'Suggestions', icon: MessageSquareText })
   items.push({ to: '/notices', label: 'Notices', icon: Megaphone })
+  items.push({ to: '/homework', label: 'Homework', icon: BookOpen })
   items.push({ to: '/calendar', label: 'Calendar', icon: CalendarDays })
   if (canEdit) items.push({ to: '/expenses', label: 'Expenses', icon: Wallet })
   items.push({ to: '/profile', label: 'Profile', icon: User })

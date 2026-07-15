@@ -15,5 +15,8 @@ export default function ProtectedRoute({ children }) {
   if (profile === null) {
     return <Navigate to="/onboarding" replace />
   }
+  if (profile.role === 'parent') {
+    return <Navigate to="/parent" replace />
+  }
   return children
 }

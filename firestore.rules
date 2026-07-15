@@ -23,6 +23,18 @@ service cloud.firestore {
     function inMyOrg(data) {
       return data.orgId == myOrgId();
     }
+    function isParent() {
+      return myProfile().role == 'parent';
+    }
+    // Staff (head/teacher) see every record in their org; a parent only
+    // ever sees records belonging to their own linked child, never anyone
+    // else's — this is the core privacy boundary for the parent portal.
+    function isLinkedStudent(studentId) {
+      return isParent() && studentId in myProfile().linkedStudentIds;
+    }
+    function canSeeStudentData(data) {
+      return (inMyOrg(data) && !isParent()) || isLinkedStudent(data.studentId);
+    }
 
     // Each user's own profile doc — anyone signed in can read profiles
     // (needed so a head can list their teachers), but you can only write your own.
@@ -39,62 +51,84 @@ service cloud.firestore {
       allow update, delete: if signedIn() && resource.data.headUid == request.auth.uid;
     }
 
+    // Parent access codes — a minimal, separate lookup so a brand-new
+    // parent (no profile yet) can find which student a code belongs to,
+    // without needing broad read access to actual student records. The
+    // code itself (unguessable, shared out-of-band) is the credential.
+    match /parentCodes/{code} {
+      allow read: if signedIn();
+      allow write: if signedIn() && inMyOrg(request.resource.data) && canEdit();
+    }
+
     match /students/{docId} {
-      allow read: if signedIn() && inMyOrg(resource.data);
+      allow read: if signedIn() && (
+        (inMyOrg(resource.data) && !isParent()) ||
+        (isParent() && docId in myProfile().linkedStudentIds)
+      );
       allow create: if signedIn() && inMyOrg(request.resource.data) && canEdit();
       allow update, delete: if signedIn() && inMyOrg(resource.data) && canEdit();
     }
 
     match /attendance/{docId} {
-      allow read: if signedIn() && inMyOrg(resource.data);
+      allow read: if signedIn() && canSeeStudentData(resource.data);
       allow write: if signedIn() && inMyOrg(request.resource.data) && canMarkAttendance();
     }
 
     match /feePayments/{docId} {
-      allow read: if signedIn() && inMyOrg(resource.data);
+      allow read: if signedIn() && canSeeStudentData(resource.data);
       allow write: if signedIn() && inMyOrg(request.resource.data) && canEdit();
     }
 
+    // Exam metadata (name/date/batch/total marks — no individual scores)
+    // is low-sensitivity, so org-wide read including parents is fine.
     match /exams/{docId} {
       allow read: if signedIn() && inMyOrg(resource.data);
       allow create: if signedIn() && inMyOrg(request.resource.data) && canEdit();
       allow update, delete: if signedIn() && inMyOrg(resource.data) && canEdit();
     }
 
+    // Individual marks are sensitive — same student-scoped rule as
+    // attendance/fees.
     match /examMarks/{docId} {
-      allow read: if signedIn() && inMyOrg(resource.data);
+      allow read: if signedIn() && canSeeStudentData(resource.data);
       allow write: if signedIn() && inMyOrg(request.resource.data) && canEdit();
     }
 
-    // Teacher salary/assignment records — head only.
+    // Teacher salary/assignment records — head only, never parents.
     match /teachers/{docId} {
-      allow read: if signedIn() && inMyOrg(resource.data);
+      allow read: if signedIn() && inMyOrg(resource.data) && !isParent();
       allow write: if signedIn() && inMyOrg(request.resource.data) && myProfile().role == 'head';
     }
 
     match /salaryPayments/{docId} {
-      allow read: if signedIn() && inMyOrg(resource.data);
+      allow read: if signedIn() && inMyOrg(resource.data) && !isParent();
       allow write: if signedIn() && inMyOrg(request.resource.data) && myProfile().role == 'head';
     }
 
-    // Suggestions — any org member (head or org teacher) can read; teachers
-    // can create their own; only the head can update (mark resolved).
+    // Suggestions — internal staff channel, never visible to parents.
     match /suggestions/{docId} {
-      allow read: if signedIn() && inMyOrg(resource.data);
-      allow create: if signedIn() && inMyOrg(request.resource.data);
+      allow read: if signedIn() && inMyOrg(resource.data) && !isParent();
+      allow create: if signedIn() && inMyOrg(request.resource.data) && !isParent();
       allow update: if signedIn() && inMyOrg(resource.data) && myProfile().role == 'head';
     }
 
-    // Notices/homework board — head or solo posts, org teachers view only.
+    // Notices/homework board — low-sensitivity announcements, fine for
+    // parents to read too; only head/solo can post.
     match /notices/{docId} {
       allow read: if signedIn() && inMyOrg(resource.data);
       allow create: if signedIn() && inMyOrg(request.resource.data) && canEdit();
       allow update, delete: if signedIn() && inMyOrg(resource.data) && canEdit();
     }
 
-    // Expenses/income ledger — financial data, so restricted to whoever
-    // fully owns the org's money (head or a solo teacher). canEdit()
-    // already excludes org teachers, so this alone is sufficient.
+    match /homework/{docId} {
+      allow read: if signedIn() && inMyOrg(resource.data);
+      allow create: if signedIn() && inMyOrg(request.resource.data) && canEdit();
+      allow update, delete: if signedIn() && inMyOrg(resource.data) && canEdit();
+    }
+
+    // Expenses/income ledger — financial data, restricted to whoever fully
+    // owns the org's money. canEdit() already excludes parents and org
+    // teachers, so this alone is sufficient.
     match /transactions/{docId} {
       allow read: if signedIn() && inMyOrg(resource.data) && canEdit();
       allow create: if signedIn() && inMyOrg(request.resource.data) && canEdit();
@@ -107,6 +141,19 @@ service cloud.firestore {
     match /notifications/{docId} {
       allow read, update: if signedIn() && resource.data.targetUid == request.auth.uid;
       allow create: if signedIn() && inMyOrg(request.resource.data);
+    }
+
+    // Parent <-> Head messages. Either side of a thread can read/write
+    // within their own conversation; nobody else can see it.
+    match /messages/{docId} {
+      allow read, update: if signedIn() && (
+        resource.data.parentUid == request.auth.uid ||
+        resource.data.headUid == request.auth.uid
+      );
+      allow create: if signedIn() && (
+        (isParent() && request.resource.data.parentUid == request.auth.uid) ||
+        (myProfile().role == 'head' && request.resource.data.headUid == request.auth.uid)
+      );
     }
   }
 }

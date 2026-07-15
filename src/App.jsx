@@ -22,10 +22,15 @@ import ExamDetail from './pages/ExamDetail'
 import Teachers from './pages/Teachers'
 import Suggestions from './pages/Suggestions'
 import Notices from './pages/Notices'
+import Homework from './pages/Homework'
 import CalendarPage from './pages/CalendarPage'
 import Expenses from './pages/Expenses'
 import Profile from './pages/Profile'
 import Terms from './pages/Terms'
+import ParentShell from './components/ParentShell'
+import ParentDashboard from './pages/ParentDashboard'
+import ParentMessages from './pages/ParentMessages'
+import ParentInbox from './pages/ParentInbox'
 import TourModal from './components/TourModal'
 import WhatsNewModal from './components/WhatsNewModal'
 import { CURRENT_VERSION } from './changelog'
@@ -90,6 +95,18 @@ function FinanceRoute({ children }) {
   return children
 }
 
+// Parent-only pages — self-contained auth check (not nested inside
+// ProtectedRoute, since that redirects parents to /parent already).
+function ParentOnlyRoute({ children }) {
+  const { user } = useAuth()
+  const { profile, isParent, loading } = useRole()
+  if (user === undefined || loading) return <div className="screen-loading">Loading…</div>
+  if (user === null) return <Navigate to="/login" replace />
+  if (profile === null) return <Navigate to="/onboarding" replace />
+  if (!isParent) return <Navigate to="/" replace />
+  return children
+}
+
 function AppRoutes() {
   return (
     <Routes>
@@ -108,9 +125,14 @@ function AppRoutes() {
       <Route path="/teachers" element={<ProtectedRoute><HeadOnlyRoute><AppShell><Teachers /></AppShell></HeadOnlyRoute></ProtectedRoute>} />
       <Route path="/suggestions" element={<ProtectedRoute><OrgRoute><AppShell><Suggestions /></AppShell></OrgRoute></ProtectedRoute>} />
       <Route path="/notices" element={<ProtectedRoute><AppShell><Notices /></AppShell></ProtectedRoute>} />
+      <Route path="/homework" element={<ProtectedRoute><AppShell><Homework /></AppShell></ProtectedRoute>} />
       <Route path="/calendar" element={<ProtectedRoute><AppShell><CalendarPage /></AppShell></ProtectedRoute>} />
       <Route path="/expenses" element={<ProtectedRoute><FinanceRoute><AppShell><Expenses /></AppShell></FinanceRoute></ProtectedRoute>} />
+      <Route path="/inbox" element={<ProtectedRoute><HeadOnlyRoute><AppShell><ParentInbox /></AppShell></HeadOnlyRoute></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute><AppShell><Profile /></AppShell></ProtectedRoute>} />
+      <Route path="/parent" element={<ParentOnlyRoute><ParentShell><ParentDashboard /></ParentShell></ParentOnlyRoute>} />
+      <Route path="/parent/messages" element={<ParentOnlyRoute><ParentShell><ParentMessages /></ParentShell></ParentOnlyRoute>} />
+      <Route path="/parent/profile" element={<ParentOnlyRoute><ParentShell><Profile /></ParentShell></ParentOnlyRoute>} />
     </Routes>
   )
 }

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { collection, getDocs, query, where } from 'firebase/firestore'
 import { db } from '../firebase'
 import { useRole } from '../context/RoleContext'
-import { ChevronLeft, ChevronRight, ClipboardList, Megaphone } from 'lucide-react'
+import { ChevronLeft, ChevronRight, ClipboardList, Megaphone, BookOpen } from 'lucide-react'
 
 const WEEKDAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
 
@@ -19,9 +19,10 @@ export default function CalendarPage() {
   useEffect(() => {
     async function load() {
       setLoading(true)
-      const [examSnap, noticeSnap] = await Promise.all([
+      const [examSnap, noticeSnap, homeworkSnap] = await Promise.all([
         getDocs(query(collection(db, 'exams'), where('orgId', '==', orgId))),
-        getDocs(query(collection(db, 'notices'), where('orgId', '==', orgId)))
+        getDocs(query(collection(db, 'notices'), where('orgId', '==', orgId))),
+        getDocs(query(collection(db, 'homework'), where('orgId', '==', orgId)))
       ])
       const map = {}
       examSnap.docs.forEach((d) => {
@@ -35,6 +36,12 @@ export default function CalendarPage() {
         if (!n.eventDate) return
         if (!map[n.eventDate]) map[n.eventDate] = []
         map[n.eventDate].push({ type: 'notice', title: n.title, sub: n.batch === 'all' ? 'All batches' : n.batch, link: '/notices' })
+      })
+      homeworkSnap.docs.forEach((d) => {
+        const h = d.data()
+        if (!h.dueDate) return
+        if (!map[h.dueDate]) map[h.dueDate] = []
+        map[h.dueDate].push({ type: 'homework', title: h.title, sub: `${h.subject} · ${h.batch}`, link: '/homework' })
       })
       setEventsByDate(map)
       setLoading(false)
@@ -108,7 +115,7 @@ export default function CalendarPage() {
         <div className="card-list">
           {selectedEvents.map((ev, i) => (
             <Link key={i} to={ev.link} className="exam-row">
-              <div className="exam-row__icon">{ev.type === 'exam' ? <ClipboardList size={18} /> : <Megaphone size={18} />}</div>
+              <div className="exam-row__icon">{ev.type === 'exam' ? <ClipboardList size={18} /> : ev.type === 'homework' ? <BookOpen size={18} /> : <Megaphone size={18} />}</div>
               <div className="exam-row__main">
                 <div className="student-row__name">{ev.title}</div>
                 <div className="student-row__meta">{ev.sub}</div>

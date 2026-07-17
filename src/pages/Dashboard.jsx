@@ -63,8 +63,8 @@ export default function Dashboard() {
       if (canEdit && !profile?.dismissedChecklist) {
         const items = [
           { label: 'Add your first student', done: students.length > 0, link: '/students' },
-          { label: 'Mark attendance for a batch', done: allAttendance.length > 0, link: '/attendance' },
-          { label: 'Create your first exam', done: exams.length > 0, link: '/exams' }
+          { label: 'Mark attendance for a batch', done: allAttendance.length > 0, link: '/academics?tab=attendance' },
+          { label: 'Create your first exam', done: exams.length > 0, link: '/academics?tab=exams' }
         ]
         if (isHead) {
           const anyTeacherSnap = await getDocs(query(collection(db, 'users'), where('orgId', '==', orgId), where('role', '==', 'teacher'), limit(1)))
@@ -148,14 +148,14 @@ export default function Dashboard() {
 
   const quickActions = [
     { to: '/students', label: 'Add Student', icon: UserPlus },
-    { to: '/attendance', label: 'Take Attendance', icon: CalendarCheck },
-    { to: '/fees', label: 'Collect Fees', icon: IndianRupee },
-    { to: '/exams', label: 'Add Exam', icon: ClipboardList }
+    { to: '/academics?tab=attendance', label: 'Take Attendance', icon: CalendarCheck },
+    { to: '/money?tab=fees', label: 'Collect Fees', icon: IndianRupee },
+    { to: '/academics?tab=exams', label: 'Add Exam', icon: ClipboardList }
   ]
   const viewActions = [
     { to: '/students', label: 'View Students', icon: Users },
-    { to: '/fees', label: 'View Fees', icon: IndianRupee },
-    { to: '/suggestions', label: 'Send Suggestion', icon: MessageSquareText }
+    { to: '/money?tab=fees', label: 'View Fees', icon: IndianRupee },
+    { to: '/inbox?tab=suggestions', label: 'Send Suggestion', icon: MessageSquareText }
   ]
 
   return (

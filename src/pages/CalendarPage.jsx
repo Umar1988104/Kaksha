@@ -35,13 +35,13 @@ export default function CalendarPage() {
         const n = d.data()
         if (!n.eventDate) return
         if (!map[n.eventDate]) map[n.eventDate] = []
-        map[n.eventDate].push({ type: 'notice', title: n.title, sub: n.batch === 'all' ? 'All batches' : n.batch, link: '/notices' })
+        map[n.eventDate].push({ type: 'notice', title: n.title, sub: n.batch === 'all' ? 'All batches' : n.batch, link: '/updates?tab=notices' })
       })
       homeworkSnap.docs.forEach((d) => {
         const h = d.data()
         if (!h.dueDate) return
         if (!map[h.dueDate]) map[h.dueDate] = []
-        map[h.dueDate].push({ type: 'homework', title: h.title, sub: `${h.subject} · ${h.batch}`, link: '/homework' })
+        map[h.dueDate].push({ type: 'homework', title: h.title, sub: `${h.subject} · ${h.batch}`, link: '/academics?tab=homework' })
       })
       setEventsByDate(map)
       setLoading(false)

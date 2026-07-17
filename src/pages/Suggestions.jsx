@@ -49,7 +49,7 @@ export default function Suggestions() {
           type: 'suggestion',
           title: 'New suggestion',
           message: `${profile?.name || 'A teacher'}: "${message.trim().slice(0, 60)}${message.trim().length > 60 ? '…' : ''}"`,
-          link: '/suggestions'
+          link: '/inbox?tab=suggestions'
         })
       }
     } catch (err) { /* notification failing shouldn't block the suggestion itself */ }
@@ -68,7 +68,7 @@ export default function Suggestions() {
         type: 'resolved',
         title: 'Your suggestion was resolved',
         message: suggestion.message.slice(0, 60),
-        link: '/suggestions'
+        link: '/inbox?tab=suggestions'
       })
     } catch (err) { /* non-critical */ }
     load()

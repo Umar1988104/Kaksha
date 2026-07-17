@@ -89,7 +89,7 @@ export default function ExamDetail() {
 
   return (
     <div className="page">
-      <Link to="/exams" className="back-link">← Back to exams</Link>
+      <Link to="/academics?tab=exams" className="back-link">← Back to exams</Link>
       <div className="page__header page__header--row">
         <div>
           <h1>{exam.name}</h1>

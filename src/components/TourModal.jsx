@@ -5,30 +5,26 @@ import { useAuth } from '../context/AuthContext'
 import { useRole } from '../context/RoleContext'
 import { CURRENT_VERSION } from '../changelog'
 import {
-  Bell, BookOpen, CalendarCheck, CalendarDays, ClipboardList, IndianRupee, LayoutDashboard,
-  Megaphone, MessageSquareText, Search, Sparkles, UserCog, Users, X
+  BookOpen, CalendarDays, IndianRupee, LayoutDashboard,
+  MessageSquareText, Search, Sparkles, UserCog, Users, X
 } from 'lucide-react'
 
 const BASE_STEPS = [
-  { icon: LayoutDashboard, title: 'Dashboard', body: "Your center's at-a-glance view — students, fees collected and pending, today's attendance, and quick shortcuts to the things you do most." },
+  { icon: LayoutDashboard, title: 'Dashboard', body: "Your center's at-a-glance view — students, fees collected and pending, today's attendance, trends, and quick shortcuts to the things you do most." },
   { icon: Users, title: 'Students', body: 'Add students (with a photo!) and they group automatically into batch folders. Tap any student for their full profile — attendance %, exam average, and fee history. Student leaving? "Mark as left" keeps their history safe instead of deleting it.' },
-  { icon: CalendarCheck, title: 'Attendance', body: 'Pick a date and batch, mark present/absent, and save — works even with no signal, it\u2019ll sync once you\u2019re back online. After marking, you can share the absentee list straight to WhatsApp in one tap.' },
-  { icon: IndianRupee, title: 'Fees', body: 'See who\u2019s paid and who\u2019s due each month. One tap opens WhatsApp with a reminder message ready to send to the parent.' },
-  { icon: ClipboardList, title: 'Exams', body: 'Create an exam once (name, subject, batch, total marks), then enter every student\u2019s marks in one place. Marks automatically build each student\u2019s report card.' },
-  { icon: Megaphone, title: 'Notices', body: 'Post holidays and announcements — optionally pinned to a date so they also show up on the Calendar.' },
-  { icon: BookOpen, title: 'Homework', body: 'Post assignments with a subject, batch, and due date — instead of typing it out on WhatsApp every time.' },
-  { icon: CalendarDays, title: 'Calendar', body: 'See every exam and dated notice on one month view — tap any day to see what\u2019s scheduled.' },
-  { icon: Search, title: 'Search', body: 'The search icon at the top finds any student or exam instantly by name, batch, or subject.' },
-  { icon: Bell, title: 'Notifications', body: 'The bell icon keeps you posted — suggestions from teachers, resolutions from your head, and new teachers joining, all in real time.' }
+  { icon: BookOpen, title: 'Academics', body: 'Attendance, Exams, and Homework all live here as tabs. Mark attendance (works offline too), record exam marks that build report cards automatically, and post assignments instead of typing them out on WhatsApp.' },
+  { icon: IndianRupee, title: 'Money', body: 'Fees and Expenses, as tabs. See who\u2019s paid and who\u2019s due, remind parents on WhatsApp in one tap, and track your center\u2019s income and expenses with a clear profit/loss view.' },
+  { icon: CalendarDays, title: 'Updates', body: 'Notices and Calendar together — post announcements, and see every exam, notice, and homework due date on one month view.' },
+  { icon: Search, title: 'Search & Notifications', body: 'The search icon at the top finds any student or exam instantly. The bell keeps you posted on suggestions, resolutions, and new teachers joining, in real time.' }
 ]
 
 const HEAD_STEPS = [
   { icon: UserCog, title: 'Teachers', body: 'Manage every teacher who joins your organization — set their salary, assigned batches, and timings, and mark salary paid each month. Your join code lives here too, ready to share.' },
-  { icon: MessageSquareText, title: 'Suggestions', body: 'Teachers can send you notes and update requests here. Mark them resolved once handled.' }
+  { icon: MessageSquareText, title: 'Inbox', body: 'Suggestions from your teachers and messages from parents, both in one place — as tabs, with unread counts.' }
 ]
 
 const ORG_TEACHER_STEPS = [
-  { icon: MessageSquareText, title: 'Suggestions', body: "You're viewing your organization's data read-only. Got an update to request? Send a note to your center head here." }
+  { icon: MessageSquareText, title: 'Inbox', body: "You're viewing your organization's data read-only. Got an update to request? Send a note to your center head here." }
 ]
 
 export default function TourModal({ onClose }) {

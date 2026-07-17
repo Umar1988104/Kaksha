@@ -2,36 +2,27 @@ import { useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useRole } from '../context/RoleContext'
-import { BookOpen, CalendarCheck, CalendarDays, ClipboardList, IndianRupee, LayoutDashboard, LogOut, Megaphone, MessageCircle, MessageSquareText, Search, User, UserCog, Users, Wallet } from 'lucide-react'
+import { BookOpen, CalendarDays, IndianRupee, LayoutDashboard, LogOut, MessageSquareText, Search, User, UserCog, Users } from 'lucide-react'
 import ConfirmModal from './ConfirmModal'
 import NotificationBell from './NotificationBell'
 import GlobalSearch from './GlobalSearch'
 
 export default function Navbar() {
   const { logout } = useAuth()
-  const { isHead, isOrgTeacher, canEdit } = useRole()
+  const { isHead, isOrgTeacher } = useRole()
   const [confirmingLogout, setConfirmingLogout] = useState(false)
   const [showSearch, setShowSearch] = useState(false)
 
   const links = [
     { to: '/', label: 'Dashboard', end: true, icon: LayoutDashboard },
     { to: '/students', label: 'Students', icon: Users },
-    { to: '/attendance', label: 'Attendance', icon: CalendarCheck },
-    { to: '/fees', label: 'Fees', icon: IndianRupee },
-    { to: '/exams', label: 'Exams', icon: ClipboardList }
+    { to: '/academics', label: 'Academics', icon: BookOpen },
+    { to: '/money', label: 'Money', icon: IndianRupee },
+    { to: '/updates', label: 'Updates', icon: CalendarDays }
   ]
 
-  if (isHead) {
-    links.push({ to: '/teachers', label: 'Teachers', icon: UserCog })
-    links.push({ to: '/suggestions', label: 'Suggestions', icon: MessageSquareText })
-    links.push({ to: '/inbox', label: 'Parent Messages', icon: MessageCircle })
-  } else if (isOrgTeacher) {
-    links.push({ to: '/suggestions', label: 'Suggestions', icon: MessageSquareText })
-  }
-  links.push({ to: '/notices', label: 'Notices', icon: Megaphone })
-  links.push({ to: '/homework', label: 'Homework', icon: BookOpen })
-  links.push({ to: '/calendar', label: 'Calendar', icon: CalendarDays })
-  if (canEdit) links.push({ to: '/expenses', label: 'Expenses', icon: Wallet })
+  if (isHead) links.push({ to: '/teachers', label: 'Teachers', icon: UserCog })
+  if (isHead || isOrgTeacher) links.push({ to: '/inbox', label: 'Inbox', icon: MessageSquareText })
   links.push({ to: '/profile', label: 'Profile', icon: User })
 
   return (

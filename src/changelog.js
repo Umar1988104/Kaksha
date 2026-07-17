@@ -3,9 +3,19 @@
 // against each user's last-seen version (stored on their profile) — nothing
 // else needs to change, and it costs nothing if you skip a release.
 
-export const CURRENT_VERSION = '4.0.0'
+export const CURRENT_VERSION = '5.0.0'
 
 export const CHANGELOG = [
+  {
+    version: '5.0.0',
+    date: '2026-07-14',
+    title: "What's new",
+    items: [
+      'Simplified navigation — 12 scattered menu items are now 5 clear ones: Academics (Attendance, Exams, Homework), Money (Fees, Expenses), Updates (Notices, Calendar), and Inbox (Suggestions, Parent Messages).',
+      'Nothing was removed — everything is just one tap deeper and easier to find, especially for anyone new to the app.',
+      'The app tour was updated to match the new layout.'
+    ]
+  },
   {
     version: '4.0.0',
     date: '2026-07-13',

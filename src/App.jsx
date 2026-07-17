@@ -15,22 +15,17 @@ import Onboarding from './pages/Onboarding'
 import Dashboard from './pages/Dashboard'
 import Students from './pages/Students'
 import StudentDetail from './pages/StudentDetail'
-import Attendance from './pages/Attendance'
-import Fees from './pages/Fees'
-import Exams from './pages/Exams'
 import ExamDetail from './pages/ExamDetail'
+import Academics from './pages/Academics'
+import Money from './pages/Money'
+import Updates from './pages/Updates'
+import Inbox from './pages/Inbox'
 import Teachers from './pages/Teachers'
-import Suggestions from './pages/Suggestions'
-import Notices from './pages/Notices'
-import Homework from './pages/Homework'
-import CalendarPage from './pages/CalendarPage'
-import Expenses from './pages/Expenses'
 import Profile from './pages/Profile'
 import Terms from './pages/Terms'
 import ParentShell from './components/ParentShell'
 import ParentDashboard from './pages/ParentDashboard'
 import ParentMessages from './pages/ParentMessages'
-import ParentInbox from './pages/ParentInbox'
 import TourModal from './components/TourModal'
 import WhatsNewModal from './components/WhatsNewModal'
 import { CURRENT_VERSION } from './changelog'
@@ -86,15 +81,6 @@ function OrgRoute({ children }) {
   return children
 }
 
-// Expenses is financial data — visible to whoever fully owns the org's
-// money (head or a solo teacher), never to an org teacher.
-function FinanceRoute({ children }) {
-  const { canEdit, isOrgTeacher, loading } = useRole()
-  if (loading) return <div className="screen-loading">Loading…</div>
-  if (!canEdit || isOrgTeacher) return <Navigate to="/" replace />
-  return children
-}
-
 // Parent-only pages — self-contained auth check (not nested inside
 // ProtectedRoute, since that redirects parents to /parent already).
 function ParentOnlyRoute({ children }) {
@@ -118,18 +104,23 @@ function AppRoutes() {
       <Route path="/" element={<ProtectedRoute><AppShell><Dashboard /></AppShell></ProtectedRoute>} />
       <Route path="/students" element={<ProtectedRoute><AppShell><Students /></AppShell></ProtectedRoute>} />
       <Route path="/students/:id" element={<ProtectedRoute><AppShell><StudentDetail /></AppShell></ProtectedRoute>} />
-      <Route path="/attendance" element={<ProtectedRoute><AppShell><Attendance /></AppShell></ProtectedRoute>} />
-      <Route path="/fees" element={<ProtectedRoute><AppShell><Fees /></AppShell></ProtectedRoute>} />
-      <Route path="/exams" element={<ProtectedRoute><AppShell><Exams /></AppShell></ProtectedRoute>} />
+      <Route path="/academics" element={<ProtectedRoute><AppShell><Academics /></AppShell></ProtectedRoute>} />
       <Route path="/exams/:id" element={<ProtectedRoute><AppShell><ExamDetail /></AppShell></ProtectedRoute>} />
+      <Route path="/money" element={<ProtectedRoute><AppShell><Money /></AppShell></ProtectedRoute>} />
+      <Route path="/updates" element={<ProtectedRoute><AppShell><Updates /></AppShell></ProtectedRoute>} />
       <Route path="/teachers" element={<ProtectedRoute><HeadOnlyRoute><AppShell><Teachers /></AppShell></HeadOnlyRoute></ProtectedRoute>} />
-      <Route path="/suggestions" element={<ProtectedRoute><OrgRoute><AppShell><Suggestions /></AppShell></OrgRoute></ProtectedRoute>} />
-      <Route path="/notices" element={<ProtectedRoute><AppShell><Notices /></AppShell></ProtectedRoute>} />
-      <Route path="/homework" element={<ProtectedRoute><AppShell><Homework /></AppShell></ProtectedRoute>} />
-      <Route path="/calendar" element={<ProtectedRoute><AppShell><CalendarPage /></AppShell></ProtectedRoute>} />
-      <Route path="/expenses" element={<ProtectedRoute><FinanceRoute><AppShell><Expenses /></AppShell></FinanceRoute></ProtectedRoute>} />
-      <Route path="/inbox" element={<ProtectedRoute><HeadOnlyRoute><AppShell><ParentInbox /></AppShell></HeadOnlyRoute></ProtectedRoute>} />
+      <Route path="/inbox" element={<ProtectedRoute><OrgRoute><AppShell><Inbox /></AppShell></OrgRoute></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute><AppShell><Profile /></AppShell></ProtectedRoute>} />
+
+      {/* Old bookmarked links keep working, just land on the right tab now */}
+      <Route path="/attendance" element={<Navigate to="/academics?tab=attendance" replace />} />
+      <Route path="/exams" element={<Navigate to="/academics?tab=exams" replace />} />
+      <Route path="/homework" element={<Navigate to="/academics?tab=homework" replace />} />
+      <Route path="/fees" element={<Navigate to="/money?tab=fees" replace />} />
+      <Route path="/expenses" element={<Navigate to="/money?tab=expenses" replace />} />
+      <Route path="/notices" element={<Navigate to="/updates?tab=notices" replace />} />
+      <Route path="/calendar" element={<Navigate to="/updates?tab=calendar" replace />} />
+      <Route path="/suggestions" element={<Navigate to="/inbox?tab=suggestions" replace />} />
       <Route path="/parent" element={<ParentOnlyRoute><ParentShell><ParentDashboard /></ParentShell></ParentOnlyRoute>} />
       <Route path="/parent/messages" element={<ParentOnlyRoute><ParentShell><ParentMessages /></ParentShell></ParentOnlyRoute>} />
       <Route path="/parent/profile" element={<ParentOnlyRoute><ParentShell><Profile /></ParentShell></ParentOnlyRoute>} />

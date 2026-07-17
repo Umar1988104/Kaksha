@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { NavLink } from 'react-router-dom'
-import { CalendarCheck, IndianRupee, LayoutDashboard, MoreHorizontal, Users } from 'lucide-react'
+import { BookOpen, IndianRupee, LayoutDashboard, MoreHorizontal, Users } from 'lucide-react'
 import MoreSheet from './MoreSheet'
 
 export default function BottomNav() {
@@ -9,8 +9,8 @@ export default function BottomNav() {
   const items = [
     { to: '/', label: 'Home', end: true, icon: LayoutDashboard },
     { to: '/students', label: 'Students', icon: Users },
-    { to: '/fees', label: 'Fees', icon: IndianRupee },
-    { to: '/attendance', label: 'Attendance', icon: CalendarCheck }
+    { to: '/academics', label: 'Academics', icon: BookOpen },
+    { to: '/money', label: 'Money', icon: IndianRupee }
   ]
 
   return (
